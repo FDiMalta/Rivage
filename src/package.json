@@ -1,0 +1,23 @@
+{
+  "name": "bdl-bot",
+  "version": "1.0.0",
+  "description": "Bot custom pour le serveur BDL",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js",
+    "deploy": "node src/deploy-commands.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "better-sqlite3": "^11.0.0",
+    "discord.js": "^14.0.0",
+    "dotenv": "^16.0.0",
+    "node-cron": "^3.0.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.0"
+  }
+}
