@@ -297,7 +297,7 @@ const commands = [
             subcommand
                 .setName("brouillon")
                 .setDescription("Génère un brouillon de Gazette avec les rumeurs et points.")
-        )
+        ),
 
         /*
           /gazette publier
