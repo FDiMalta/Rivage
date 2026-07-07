@@ -375,7 +375,7 @@ const commands = [
                     option
                         .setName("nominations")
                         .setDescription("Les rôles ou nominations de la semaine.")
-                        .setRequired(false)
+                        .setRequired(true)
                         .setMaxLength(1000)
                 )
                 .addAttachmentOption(option =>
