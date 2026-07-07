@@ -156,37 +156,37 @@ function applyAttachmentImage(embed, attachment) {
 // ===== BOUTIQUE =====
 const SHOP_ITEMS = {
     emoji_personnalise: {
-        name: "Emoji personnalisé sur le serveur",
+        name: "🎨 Emoji personnalisé sur le serveur",
         price: 10,
         description: "Demande l'ajout d'un emoji personnalisé sur le serveur."
     },
     commande_personnalisee: {
-        name: "Commande personnalisée",
+        name: "💻 Commande personnalisée",
         price: 20,
         description: "Crée une commande slash personnalisée pour le bot."
     },
     xp_boost: {
-        name: "Boost d'XP",
+        name: "⚡ Boost d'XP",
         price: 5,
         description: "Obtiens +10 XP pour ton profil."
     },
     nude_colo: {
-        name: "Nude de colo (fausse)",
+        name: "📸 Nude de colo (fausse)",
         price: 15,
         description: "Ajoute une fausse photo de 'nude de colo' à ton profil."
     },
     trophee_personnalise: {
-        name: "Trophée personnalisé",
+        name: "🏆 Trophée personnalisé",
         price: 30,
         description: "Obtiens un trophée personnalisé unique. **Limité à 1 par personne.**"
     },
     theme_gazette: {
-        name: "Thème de Gazette",
+        name: "📰 Thème de Gazette",
         price: 10,
         description: "Propose le thème principal de la prochaine Gazette."
     },
     film_soiree: {
-        name: "Choisir le film des soirées popcorn",
+        name: "🎬 Choisir le film des soirées popcorn",
         price: 8,
         description: "Choisis le film pour la prochaine soirée popcorn."
     }
@@ -196,7 +196,7 @@ function formatShopItemList() {
     return Object.entries(SHOP_ITEMS)
         .sort((a, b) => a[1].price - b[1].price)
         .map(([key, item]) => {
-            return `**${item.name}** — **${item.price} points**\n${item.description}\n\`/boutique acheter item:${key} note:...\``;
+            return `**${item.name}** — **${item.price} points**\n${item.description}\n\`/boutique acheter item:\${key} note:...\``;
         })
         .join("\n\n");
 }
@@ -206,17 +206,10 @@ function getPointsBannerUrl(points) {
     return `https://via.placeholder.com/600x200/9b59b6/FFFFFF?text=+${points}+POINTS+BDL`;
 }
 
-// Ajoute un nombre de jours à une date (clone la date pour éviter les mutations).
+// Ajoute un nombre de jours à une date.
 function addDays(date, days) {
     const result = new Date(date.getTime());
     result.setDate(result.getDate() + days);
-    return result;
-}
-
-// Retire un nombre de jours à une date (clone la date).
-function subtractDays(date, days) {
-    const result = new Date(date.getTime());
-    result.setDate(result.getDate() - days);
     return result;
 }
 
@@ -227,7 +220,14 @@ function formatDateForDatabase(date) {
 
 // Calcule une date limite pour le nettoyage.
 function getCleanupDate(days) {
-    return subtractDays(new Date(), days).toISOString();
+    return formatDateForDatabase(subtractDays(new Date(), days));
+}
+
+// Retire un nombre de jours à une date.
+function subtractDays(date, days) {
+    const result = new Date(date.getTime());
+    result.setDate(result.getDate() - days);
+    return result;
 }
 
 // Formate la taille d'un fichier.
@@ -413,7 +413,6 @@ async function handleRumorButton(interaction) {
         return;
     }
 
-    // Vérification de l'embed
     const oldEmbed = interaction.message.embeds?.[0];
     if (!oldEmbed) {
         await replyError(interaction, "Impossible de mettre à jour ce message (embed manquant).");
@@ -466,7 +465,6 @@ async function handleQuestSubmissionButton(interaction) {
         return;
     }
 
-    // Vérification de l'embed
     const oldEmbed = interaction.message.embeds?.[0];
     if (!oldEmbed) {
         await replyError(interaction, "Impossible de mettre à jour ce message (embed manquant).");
@@ -490,7 +488,6 @@ async function handleQuestSubmissionButton(interaction) {
             createdBy: interaction.user.id
         });
 
-        // Vérification du rôle et du membre
         if (submission.reward_role_id) {
             const member = await interaction.guild.members.fetch(submission.user_id).catch(() => null);
             if (!member) {
@@ -588,7 +585,6 @@ async function handleDropButton(interaction) {
 
     if (isFinished) endDropEvent({ guildId: interaction.guildId, dropId });
 
-    // Vérification de l'embed
     const oldEmbed = interaction.message.embeds?.[0];
     if (!oldEmbed) {
         await replyError(interaction, "Impossible de mettre à jour ce message (embed manquant).");
@@ -603,7 +599,7 @@ async function handleDropButton(interaction) {
         .setDescription(
             isFinished
                 ? `Le Drop Event est terminé.\n\nRécompense : **+${drop.reward_points} point(s)** par gagnant.`
-                : `Les **${drop.max_winners} premiers** qui cliquent gagnent.\n\n` +
+                : `Les **${drop.max_winners} premiers** à cliquer gagnent.\n\n` +
                   `Récompense : **+${drop.reward_points} point(s)**\n\n` +
                   `Places restantes : **${drop.max_winners - participants.length}**`
         );
@@ -640,7 +636,6 @@ async function handleShopPurchaseButton(interaction) {
         return;
     }
 
-    // Vérification de l'embed
     const oldEmbed = interaction.message.embeds?.[0];
     if (!oldEmbed) {
         await replyError(interaction, "Impossible de mettre à jour ce message (embed manquant).");
@@ -652,7 +647,7 @@ async function handleShopPurchaseButton(interaction) {
         const existingPurchases = getShopPurchasesByStatus({
             guildId: interaction.guildId,
             status: "approved"
-        }) || []; // ⚠️ Gère le cas null
+        }) || [];
         const existingTrophees = existingPurchases.filter(p => p.user_id === purchase.user_id && p.item_key === "trophee_personnalise");
 
         if (existingTrophees.length >= 1) {
@@ -884,7 +879,7 @@ async function sendBumpReminder(client, guildId) {
 
 async function handleDisboardBumpMessage(message) {
     if (!message.guild) return;
-    if (message.author.id !== "302050872383242240") return; // ID DISBOARD
+    if (message.author.id !== "302050872383242240") return;
 
     const rawContent = [
         message.content ?? "",
@@ -938,7 +933,6 @@ async function handleCommandInteraction(interaction) {
     if (interaction.commandName === "points") {
         const subcommand = interaction.options.getSubcommand();
 
-        // /points ajouter
         if (subcommand === "ajouter") {
             if (!isStaff(interaction.member)) {
                 await replyError(interaction, "Tu n’as pas la permission d’ajouter des points.");
@@ -967,7 +961,6 @@ async function handleCommandInteraction(interaction) {
             return;
         }
 
-        // /points retirer
         if (subcommand === "retirer") {
             if (!isStaff(interaction.member)) {
                 await replyError(interaction, "Tu n’as pas la permission de retirer des points.");
@@ -998,7 +991,6 @@ async function handleCommandInteraction(interaction) {
             return;
         }
 
-        // /points voir
         if (subcommand === "voir") {
             const membre = interaction.options.getUser("membre") ?? interaction.user;
             const inclureSecrets = interaction.options.getBoolean("inclure_secrets") ?? false;
@@ -1016,7 +1008,6 @@ async function handleCommandInteraction(interaction) {
             return;
         }
 
-        // /points classement
         if (subcommand === "classement") {
             const inclureSecrets = interaction.options.getBoolean("inclure_secrets") ?? false;
             if (inclureSecrets && !isStaff(interaction.member)) {
@@ -1038,7 +1029,6 @@ async function handleCommandInteraction(interaction) {
             return;
         }
 
-        // /points historique
         if (subcommand === "historique") {
             const membre = interaction.options.getUser("membre") ?? interaction.user;
             const inclureSecrets = interaction.options.getBoolean("secrets") ?? false;
@@ -1080,7 +1070,6 @@ async function handleCommandInteraction(interaction) {
     if (interaction.commandName === "rumeur") {
         const subcommand = interaction.options.getSubcommand();
 
-        // /rumeur proposer
         if (subcommand === "proposer") {
             const texte = interaction.options.getString("texte");
             const cible = interaction.options.getUser("cible");
@@ -1120,7 +1109,6 @@ async function handleCommandInteraction(interaction) {
             return;
         }
 
-        // /rumeur liste
         if (subcommand === "liste") {
             if (!isStaff(interaction.member)) {
                 await replyError(interaction, "Seul le staff peut lister les rumeurs.");
@@ -1132,12 +1120,11 @@ async function handleCommandInteraction(interaction) {
                 await interaction.reply({ content: `📭 Aucune rumeur en statut **${status}**.`, flags: MessageFlags.Ephemeral });
                 return;
             }
-            const lines = rumors.map(r => `**#${r.id}** — ${truncate(r.content, 100)}\nAuteur: ${r.anonymous ? "Anonyme" : `<@${r.author_id}>`} | Statut: ${r.status}`);
+            const lines = rumors.map(r => `**#${r.id}** — ${truncate(r.content, 100)}\nAuteur: ${r.anonymous ? "Anonyme" : `<@\${r.author_id}>`} | Statut: ${r.status}`);
             await interaction.reply({ content: `📜 **Rumeurs (${status})**\n\n${lines.join("\n\n")}`, flags: MessageFlags.Ephemeral });
             return;
         }
 
-        // /rumeur approuver
         if (subcommand === "approuver") {
             if (!isStaff(interaction.member)) {
                 await replyError(interaction, "Seul le staff peut approuver les rumeurs.");
@@ -1158,7 +1145,6 @@ async function handleCommandInteraction(interaction) {
             return;
         }
 
-        // /rumeur refuser
         if (subcommand === "refuser") {
             if (!isStaff(interaction.member)) {
                 await replyError(interaction, "Seul le staff peut refuser les rumeurs.");
@@ -1186,7 +1172,6 @@ async function handleCommandInteraction(interaction) {
     if (interaction.commandName === "gazette") {
         const subcommand = interaction.options.getSubcommand();
 
-        // /gazette brouillon
         if (subcommand === "brouillon") {
             if (!isStaff(interaction.member)) {
                 await replyError(interaction, "Seul le staff peut générer un brouillon.");
@@ -1218,14 +1203,12 @@ async function handleCommandInteraction(interaction) {
             return;
         }
 
-        // /gazette publier
         if (subcommand === "publier") {
             if (!isStaff(interaction.member)) {
                 await replyError(interaction, "Seul le staff peut publier la Gazette.");
                 return;
             }
 
-            // Récupération des données
             const titre = interaction.options.getString("titre");
             const pepites = formatMultilineInput(interaction.options.getString("pepites") || "");
             const stats = formatMultilineInput(interaction.options.getString("stats") || "");
@@ -1233,7 +1216,6 @@ async function handleCommandInteraction(interaction) {
             const exploit = formatMultilineInput(interaction.options.getString("exploit") || "");
             const nominations = formatMultilineInput(interaction.options.getString("nominations") || "");
 
-            // Récupération des images
             const banniere = interaction.options.getAttachment("banniere");
             const imagePepites = interaction.options.getAttachment("image_pepites");
             const imageStats = interaction.options.getAttachment("image_stats");
@@ -1256,14 +1238,12 @@ async function handleCommandInteraction(interaction) {
             const leaderboard = getLeaderboard({ guildId: interaction.guildId, includeSecret: false, limit: 3 });
             const pointsBannerUrl = getPointsBannerUrl(leaderboard[0]?.total || 0);
 
-            // TABLEAU D'EMBEDS DANS LE BON ORDRE
             const embeds = [];
 
-            // 1. PREMIER EMBED : Titre + bannière (TOUJOURS en premier)
             const mainEmbed = new EmbedBuilder()
                 .setTitle(`📰 **${titre}**`)
                 .setDescription(
-                    `**Édition du ${new Date().toLocaleDateString("fr-FR", {
+                    `**Édition du \${new Date().toLocaleDateString("fr-FR", {
                         weekday: "long",
                         year: "numeric",
                         month: "long",
@@ -1276,7 +1256,6 @@ async function handleCommandInteraction(interaction) {
                 .setTimestamp();
             embeds.push(mainEmbed);
 
-            // 2. Embed Pépites
             if (pepites.trim()) {
                 const embed = new EmbedBuilder()
                     .setTitle("💎 Pépites de la semaine")
@@ -1286,7 +1265,6 @@ async function handleCommandInteraction(interaction) {
                 embeds.push(embed);
             }
 
-            // 3. Embed Stats
             if (stats.trim()) {
                 const embed = new EmbedBuilder()
                     .setTitle("📊 Statistiques absurdes")
@@ -1296,7 +1274,6 @@ async function handleCommandInteraction(interaction) {
                 embeds.push(embed);
             }
 
-            // 4. Embed Rumeur
             if (rumeur.trim()) {
                 const embed = new EmbedBuilder()
                     .setTitle("🗞️ Rumeur de la semaine")
@@ -1306,7 +1283,6 @@ async function handleCommandInteraction(interaction) {
                 embeds.push(embed);
             }
 
-            // 5. Embed Exploit
             if (exploit.trim()) {
                 const embed = new EmbedBuilder()
                     .setTitle("🏆 Exploit de la semaine")
@@ -1316,7 +1292,6 @@ async function handleCommandInteraction(interaction) {
                 embeds.push(embed);
             }
 
-            // 6. Embed Nominations
             if (nominations.trim()) {
                 const embed = new EmbedBuilder()
                     .setTitle("🎖️ Nominations")
@@ -1326,7 +1301,6 @@ async function handleCommandInteraction(interaction) {
                 embeds.push(embed);
             }
 
-            // 7. Embed Classement (TOUJOURS affiché)
             const classementEmbed = new EmbedBuilder()
                 .setTitle("👑 Classement Points BDL")
                 .setDescription(
@@ -1337,7 +1311,6 @@ async function handleCommandInteraction(interaction) {
                 .setColor(0x9b59b6);
             embeds.push(classementEmbed);
 
-            // Envoi de TOUS les embeds dans l'ordre
             await channel.send({ embeds: embeds });
             await interaction.reply({ content: `✅ Gazette publiée dans ${channel} !`, flags: MessageFlags.Ephemeral });
             return;
@@ -1481,7 +1454,6 @@ async function handleCommandInteraction(interaction) {
                     proofLink: lien
                 });
 
-                // Récupère la dernière soumission de cet utilisateur pour cette quête
                 const allSubmissions = getQuestSubmissionsByStatus({
                     guildId: interaction.guildId,
                     status: "pending",
@@ -1497,7 +1469,6 @@ async function handleCommandInteraction(interaction) {
                     return;
                 }
 
-                // Envoi automatique au salon staff (comme pour les rumeurs)
                 const staffChannelId = getSetting({ guildId: interaction.guildId, key: "rumors_staff_channel_id" });
                 if (staffChannelId) {
                     const staffChannel = await interaction.guild.channels.fetch(staffChannelId).catch(() => null);
@@ -1855,7 +1826,7 @@ async function handleCommandInteraction(interaction) {
                 .setDescription(
                     `Partie active depuis le ${new Date(game.created_at).toLocaleDateString("fr-FR")}\n` +
                     `Indices: **${publishedHints} publiés**, **${unpublishedHints} en attente**\n` +
-                    `Bonne(s) réponse(s): ${guesses.length > 0 ? guesses.map(g => `<@${g.user_id}>`).join(", ") : "Aucune"}`
+                    `Bonne(s) réponse(s): ${guesses.length > 0 ? guesses.map(g => `<@\${g.user_id}>`).join(", ") : "Aucune"}`
                 )
                 .setColor(0xf39c12)
                 .setTimestamp();
@@ -2166,7 +2137,7 @@ async function handleCommandInteraction(interaction) {
             const embed = new EmbedBuilder()
                 .setTitle("🗃️ **Infos Base de Données**")
                 .setColor(0x3498db)
-                .addFields(
+                 .addFields(
                     { name: "📊 Points", value: `${stats.points}`, inline: true },
                     { name: "💬 Rumeurs", value: `${stats.rumors}`, inline: true },
                     { name: "🗺️ Quêtes", value: `${stats.quests}`, inline: true },
@@ -2190,7 +2161,9 @@ async function handleCommandInteraction(interaction) {
         }
     }
 
-    // ===== ARCHIVE =====
+
+
+            // ===== ARCHIVE =====
     if (interaction.commandName === "archive") {
         const subcommand = interaction.options.getSubcommand();
         if (subcommand === "old_drops") {
