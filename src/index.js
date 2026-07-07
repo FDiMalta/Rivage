@@ -156,37 +156,37 @@ function applyAttachmentImage(embed, attachment) {
 // ===== BOUTIQUE =====
 const SHOP_ITEMS = {
     emoji_personnalise: {
-        name: "Emoji personnalisé sur le serveur",
+        name: "🎨 Emoji personnalisé sur le serveur",
         price: 10,
         description: "Demande l'ajout d'un emoji personnalisé sur le serveur."
     },
     commande_personnalisee: {
-        name: "Commande personnalisée",
+        name: "⚙️ Commande personnalisée",
         price: 20,
         description: "Crée une commande slash personnalisée pour le bot."
     },
     xp_boost: {
-        name: "Boost d'XP",
+        name: "📈 Boost d'XP",
         price: 5,
         description: "Obtiens +10 XP pour ton profil."
     },
     nude_colo: {
-        name: "Nude de colo (fausse)",
+        name: "👕 Nude de colo (fausse)",
         price: 15,
         description: "Ajoute une fausse photo de 'nude de colo' à ton profil."
     },
     trophee_personnalise: {
-        name: "Trophée personnalisé",
+        name: "🏆 Trophée personnalisé",
         price: 30,
         description: "Obtiens un trophée personnalisé unique. **Limité à 1 par personne.**"
     },
     theme_gazette: {
-        name: "Thème de Gazette",
+        name: "📰 Thème de Gazette",
         price: 10,
         description: "Propose le thème principal de la prochaine Gazette."
     },
     film_soiree: {
-        name: "Choisir le film des soirées popcorn",
+        name: "🎬 Choisir le film des soirées popcorn",
         price: 8,
         description: "Choisis le film pour la prochaine soirée popcorn."
     }
@@ -196,7 +196,7 @@ function formatShopItemList() {
     return Object.entries(SHOP_ITEMS)
         .sort((a, b) => a[1].price - b[1].price)
         .map(([key, item]) => {
-            return `**${item.name}** — **${item.price} points**\n${item.description}\n\`/boutique acheter item:${key} note:...\``;
+            return `**${item.name}** — **${item.price} points**\n${item.description}\n\`/boutique acheter item:\${key} note:...\``;
         })
         .join("\n\n");
 }
@@ -206,14 +206,14 @@ function getPointsBannerUrl(points) {
     return `https://via.placeholder.com/600x200/9b59b6/FFFFFF?text=+${points}+POINTS+BDL`;
 }
 
-// Ajoute un nombre de jours à une date (clone la date pour éviter les mutations).
+// Ajoute un nombre de jours à une date.
 function addDays(date, days) {
     const result = new Date(date.getTime());
     result.setDate(result.getDate() + days);
     return result;
 }
 
-// Retire un nombre de jours à une date (clone la date).
+// Retire un nombre de jours à une date.
 function subtractDays(date, days) {
     const result = new Date(date.getTime());
     result.setDate(result.getDate() - days);
@@ -413,7 +413,6 @@ async function handleRumorButton(interaction) {
         return;
     }
 
-    // Vérification de l'embed
     const oldEmbed = interaction.message.embeds?.[0];
     if (!oldEmbed) {
         await replyError(interaction, "Impossible de mettre à jour ce message (embed manquant).");
@@ -466,7 +465,6 @@ async function handleQuestSubmissionButton(interaction) {
         return;
     }
 
-    // Vérification de l'embed
     const oldEmbed = interaction.message.embeds?.[0];
     if (!oldEmbed) {
         await replyError(interaction, "Impossible de mettre à jour ce message (embed manquant).");
@@ -490,7 +488,6 @@ async function handleQuestSubmissionButton(interaction) {
             createdBy: interaction.user.id
         });
 
-        // Vérification du rôle et du membre
         if (submission.reward_role_id) {
             const member = await interaction.guild.members.fetch(submission.user_id).catch(() => null);
             if (!member) {
@@ -588,7 +585,6 @@ async function handleDropButton(interaction) {
 
     if (isFinished) endDropEvent({ guildId: interaction.guildId, dropId });
 
-    // Vérification de l'embed
     const oldEmbed = interaction.message.embeds?.[0];
     if (!oldEmbed) {
         await replyError(interaction, "Impossible de mettre à jour ce message (embed manquant).");
@@ -640,19 +636,17 @@ async function handleShopPurchaseButton(interaction) {
         return;
     }
 
-    // Vérification de l'embed
     const oldEmbed = interaction.message.embeds?.[0];
     if (!oldEmbed) {
         await replyError(interaction, "Impossible de mettre à jour ce message (embed manquant).");
         return;
     }
 
-    // Vérification spéciale pour le trophée (1 max par personne)
     if (action === "approve" && purchase.item_key === "trophee_personnalise") {
         const existingPurchases = getShopPurchasesByStatus({
             guildId: interaction.guildId,
             status: "approved"
-        }) || []; // ⚠️ Gère le cas null
+        }) || [];
         const existingTrophees = existingPurchases.filter(p => p.user_id === purchase.user_id && p.item_key === "trophee_personnalise");
 
         if (existingTrophees.length >= 1) {
@@ -884,7 +878,7 @@ async function sendBumpReminder(client, guildId) {
 
 async function handleDisboardBumpMessage(message) {
     if (!message.guild) return;
-    if (message.author.id !== "302050872383242240") return; // ID DISBOARD
+    if (message.author.id !== "302050872383242240") return;
 
     const rawContent = [
         message.content ?? "",
@@ -938,7 +932,6 @@ async function handleCommandInteraction(interaction) {
     if (interaction.commandName === "points") {
         const subcommand = interaction.options.getSubcommand();
 
-        // /points ajouter
         if (subcommand === "ajouter") {
             if (!isStaff(interaction.member)) {
                 await replyError(interaction, "Tu n’as pas la permission d’ajouter des points.");
@@ -967,7 +960,6 @@ async function handleCommandInteraction(interaction) {
             return;
         }
 
-        // /points retirer
         if (subcommand === "retirer") {
             if (!isStaff(interaction.member)) {
                 await replyError(interaction, "Tu n’as pas la permission de retirer des points.");
@@ -998,7 +990,6 @@ async function handleCommandInteraction(interaction) {
             return;
         }
 
-        // /points voir
         if (subcommand === "voir") {
             const membre = interaction.options.getUser("membre") ?? interaction.user;
             const inclureSecrets = interaction.options.getBoolean("inclure_secrets") ?? false;
@@ -1016,7 +1007,6 @@ async function handleCommandInteraction(interaction) {
             return;
         }
 
-        // /points classement
         if (subcommand === "classement") {
             const inclureSecrets = interaction.options.getBoolean("inclure_secrets") ?? false;
             if (inclureSecrets && !isStaff(interaction.member)) {
@@ -1038,7 +1028,6 @@ async function handleCommandInteraction(interaction) {
             return;
         }
 
-        // /points historique
         if (subcommand === "historique") {
             const membre = interaction.options.getUser("membre") ?? interaction.user;
             const inclureSecrets = interaction.options.getBoolean("secrets") ?? false;
@@ -1080,7 +1069,6 @@ async function handleCommandInteraction(interaction) {
     if (interaction.commandName === "rumeur") {
         const subcommand = interaction.options.getSubcommand();
 
-        // /rumeur proposer
         if (subcommand === "proposer") {
             const texte = interaction.options.getString("texte");
             const cible = interaction.options.getUser("cible");
@@ -1120,7 +1108,6 @@ async function handleCommandInteraction(interaction) {
             return;
         }
 
-        // /rumeur liste
         if (subcommand === "liste") {
             if (!isStaff(interaction.member)) {
                 await replyError(interaction, "Seul le staff peut lister les rumeurs.");
@@ -1132,12 +1119,11 @@ async function handleCommandInteraction(interaction) {
                 await interaction.reply({ content: `📭 Aucune rumeur en statut **${status}**.`, flags: MessageFlags.Ephemeral });
                 return;
             }
-            const lines = rumors.map(r => `**#${r.id}** — ${truncate(r.content, 100)}\nAuteur: ${r.anonymous ? "Anonyme" : `<@${r.author_id}>`} | Statut: ${r.status}`);
+            const lines = rumors.map(r => `**#${r.id}** — ${truncate(r.content, 100)}\nAuteur: ${r.anonymous ? "Anonyme" : `<@\${r.author_id}>`} | Statut: ${r.status}`);
             await interaction.reply({ content: `📜 **Rumeurs (${status})**\n\n${lines.join("\n\n")}`, flags: MessageFlags.Ephemeral });
             return;
         }
 
-        // /rumeur approuver
         if (subcommand === "approuver") {
             if (!isStaff(interaction.member)) {
                 await replyError(interaction, "Seul le staff peut approuver les rumeurs.");
@@ -1158,7 +1144,6 @@ async function handleCommandInteraction(interaction) {
             return;
         }
 
-        // /rumeur refuser
         if (subcommand === "refuser") {
             if (!isStaff(interaction.member)) {
                 await replyError(interaction, "Seul le staff peut refuser les rumeurs.");
@@ -1186,7 +1171,6 @@ async function handleCommandInteraction(interaction) {
     if (interaction.commandName === "gazette") {
         const subcommand = interaction.options.getSubcommand();
 
-        // /gazette brouillon
         if (subcommand === "brouillon") {
             if (!isStaff(interaction.member)) {
                 await replyError(interaction, "Seul le staff peut générer un brouillon.");
@@ -1218,14 +1202,12 @@ async function handleCommandInteraction(interaction) {
             return;
         }
 
-        // /gazette publier
         if (subcommand === "publier") {
             if (!isStaff(interaction.member)) {
                 await replyError(interaction, "Seul le staff peut publier la Gazette.");
                 return;
             }
 
-            // Récupération des données
             const titre = interaction.options.getString("titre");
             const pepites = formatMultilineInput(interaction.options.getString("pepites") || "");
             const stats = formatMultilineInput(interaction.options.getString("stats") || "");
@@ -1233,7 +1215,6 @@ async function handleCommandInteraction(interaction) {
             const exploit = formatMultilineInput(interaction.options.getString("exploit") || "");
             const nominations = formatMultilineInput(interaction.options.getString("nominations") || "");
 
-            // Récupération des images
             const banniere = interaction.options.getAttachment("banniere");
             const imagePepites = interaction.options.getAttachment("image_pepites");
             const imageStats = interaction.options.getAttachment("image_stats");
@@ -1256,14 +1237,12 @@ async function handleCommandInteraction(interaction) {
             const leaderboard = getLeaderboard({ guildId: interaction.guildId, includeSecret: false, limit: 3 });
             const pointsBannerUrl = getPointsBannerUrl(leaderboard[0]?.total || 0);
 
-            // TABLEAU D'EMBEDS DANS LE BON ORDRE
             const embeds = [];
 
-            // 1. PREMIER EMBED : Titre + bannière (TOUJOURS en premier)
             const mainEmbed = new EmbedBuilder()
                 .setTitle(`📰 **${titre}**`)
                 .setDescription(
-                    `**Édition du ${new Date().toLocaleDateString("fr-FR", {
+                    `**Édition du \${new Date().toLocaleDateString("fr-FR", {
                         weekday: "long",
                         year: "numeric",
                         month: "long",
@@ -1276,7 +1255,6 @@ async function handleCommandInteraction(interaction) {
                 .setTimestamp();
             embeds.push(mainEmbed);
 
-            // 2. Embed Pépites
             if (pepites.trim()) {
                 const embed = new EmbedBuilder()
                     .setTitle("💎 Pépites de la semaine")
@@ -1286,7 +1264,6 @@ async function handleCommandInteraction(interaction) {
                 embeds.push(embed);
             }
 
-            // 3. Embed Stats
             if (stats.trim()) {
                 const embed = new EmbedBuilder()
                     .setTitle("📊 Statistiques absurdes")
@@ -1296,7 +1273,6 @@ async function handleCommandInteraction(interaction) {
                 embeds.push(embed);
             }
 
-            // 4. Embed Rumeur
             if (rumeur.trim()) {
                 const embed = new EmbedBuilder()
                     .setTitle("🗞️ Rumeur de la semaine")
@@ -1306,7 +1282,6 @@ async function handleCommandInteraction(interaction) {
                 embeds.push(embed);
             }
 
-            // 5. Embed Exploit
             if (exploit.trim()) {
                 const embed = new EmbedBuilder()
                     .setTitle("🏆 Exploit de la semaine")
@@ -1316,7 +1291,6 @@ async function handleCommandInteraction(interaction) {
                 embeds.push(embed);
             }
 
-            // 6. Embed Nominations
             if (nominations.trim()) {
                 const embed = new EmbedBuilder()
                     .setTitle("🎖️ Nominations")
@@ -1326,7 +1300,6 @@ async function handleCommandInteraction(interaction) {
                 embeds.push(embed);
             }
 
-            // 7. Embed Classement (TOUJOURS affiché)
             const classementEmbed = new EmbedBuilder()
                 .setTitle("👑 Classement Points BDL")
                 .setDescription(
@@ -1337,7 +1310,6 @@ async function handleCommandInteraction(interaction) {
                 .setColor(0x9b59b6);
             embeds.push(classementEmbed);
 
-            // Envoi de TOUS les embeds dans l'ordre
             await channel.send({ embeds: embeds });
             await interaction.reply({ content: `✅ Gazette publiée dans ${channel} !`, flags: MessageFlags.Ephemeral });
             return;
@@ -1481,7 +1453,6 @@ async function handleCommandInteraction(interaction) {
                     proofLink: lien
                 });
 
-                // Récupère la dernière soumission de cet utilisateur pour cette quête
                 const allSubmissions = getQuestSubmissionsByStatus({
                     guildId: interaction.guildId,
                     status: "pending",
@@ -1497,7 +1468,6 @@ async function handleCommandInteraction(interaction) {
                     return;
                 }
 
-                // Envoi automatique au salon staff (comme pour les rumeurs)
                 const staffChannelId = getSetting({ guildId: interaction.guildId, key: "rumors_staff_channel_id" });
                 if (staffChannelId) {
                     const staffChannel = await interaction.guild.channels.fetch(staffChannelId).catch(() => null);
@@ -1855,7 +1825,7 @@ async function handleCommandInteraction(interaction) {
                 .setDescription(
                     `Partie active depuis le ${new Date(game.created_at).toLocaleDateString("fr-FR")}\n` +
                     `Indices: **${publishedHints} publiés**, **${unpublishedHints} en attente**\n` +
-                    `Bonne(s) réponse(s): ${guesses.length > 0 ? guesses.map(g => `<@${g.user_id}>`).join(", ") : "Aucune"}`
+                    `Bonne(s) réponse(s): ${guesses.length > 0 ? guesses.map(g => `<@\${g.user_id}>`).join(", ") : "Aucune"}`
                 )
                 .setColor(0xf39c12)
                 .setTimestamp();
@@ -1965,403 +1935,3 @@ async function handleCommandInteraction(interaction) {
             return;
         }
         const totalPoints = getUserTotalPoints({ guildId: interaction.guildId, userId: membre.id, includeSecret: secrets });
-        const approvedRumors = getUserApprovedRumorCount({ guildId: interaction.guildId, userId: membre.id });
-        const approvedQuests = getUserApprovedQuestCount({ guildId: interaction.guildId, userId: membre.id });
-        const rank = getUserRank({ guildId: interaction.guildId, userId: membre.id, includeSecret: secrets });
-        const bannerUrl = getPointsBannerUrl(totalPoints);
-
-        const embed = new EmbedBuilder()
-            .setTitle(`📜 Profil BDL — ${membre.username}`)
-            .setDescription(`**Points** : **${totalPoints}**${secrets ? " (secrets inclus)" : ""}`)
-            .setColor(0x3498db)
-            .setImage(bannerUrl)
-            .addFields(
-                { name: "🏆 Classement", value: rank ? `#${rank.rank}` : "Non classé", inline: true },
-                { name: "📜 Rumeurs approuvées", value: `**${approvedRumors}**`, inline: true },
-                { name: "🗺️ Quêtes validées", value: `**${approvedQuests}**`, inline: true }
-            )
-            .setFooter({ text: "BDL Bot — /boutique pour acheter des récompenses" })
-            .setTimestamp();
-        await interaction.reply({ embeds: [embed] });
-        return;
-    }
-
-    // ===== BOUTIQUE =====
-    if (interaction.commandName === "boutique") {
-        const subcommand = interaction.options.getSubcommand();
-
-        if (subcommand === "voir") {
-            const embed = new EmbedBuilder()
-                .setTitle("🛒 **Boutique de points BDL**")
-                .setDescription("Achète des récompenses avec tes points !\n\n" + formatShopItemList())
-                .setColor(0xf1c40f)
-                .setFooter({ text: "Utilise /boutique acheter pour un achat" })
-                .setTimestamp();
-            await interaction.reply({ embeds: [embed] });
-            return;
-        }
-
-        if (subcommand === "acheter") {
-            const itemKey = interaction.options.getString("item");
-            const note = interaction.options.getString("note") ?? null;
-            const item = SHOP_ITEMS[itemKey];
-            if (!item) {
-                await replyError(interaction, "Objet introuvable.");
-                return;
-            }
-            const userTotal = getUserTotalPoints({ guildId: interaction.guildId, userId: interaction.user.id, includeSecret: false });
-            if (userTotal < item.price) {
-                await replyError(interaction, `Tu n’as pas assez de points (prix: **${item.price}**, ton total: **${userTotal}**).`);
-                return;
-            }
-            if (itemKey === "trophee_personnalise") {
-                const existingPurchases = getShopPurchasesByStatus({ guildId: interaction.guildId, status: "approved" }) || [];
-                if (existingPurchases.some(p => p.user_id === interaction.user.id && p.item_key === "trophee_personnalise")) {
-                    await replyError(interaction, "Limite atteinte : 1 trophée max par personne.");
-                    return;
-                }
-            }
-            const purchaseId = addShopPurchase({
-                guildId: interaction.guildId,
-                userId: interaction.user.id,
-                itemKey,
-                itemName: item.name,
-                price: item.price,
-                note
-            });
-            const staffChannelId = getSetting({ guildId: interaction.guildId, key: "shop_staff_channel_id" });
-            if (staffChannelId) {
-                const staffChannel = await interaction.guild.channels.fetch(staffChannelId).catch(() => null);
-                if (staffChannel?.isTextBased()) {
-                    const embed = new EmbedBuilder()
-                        .setTitle("🛒 Nouvelle demande d'achat")
-                        .setDescription(`**${item.name}** — **${item.price} points**`)
-                        .addFields(
-                            { name: "ID", value: `#${purchaseId}`, inline: true },
-                            { name: "Acheteur", value: `${interaction.user}`, inline: true },
-                            { name: "Note", value: note || "Aucune", inline: false },
-                            { name: "Statut", value: "En attente", inline: true }
-                        )
-                        .setFooter({ text: "Clique sur un bouton ou utilise /boutique approuver/refuser" })
-                        .setTimestamp();
-                    await staffChannel.send({ embeds: [embed], components: [createShopPurchaseButtons(purchaseId)] });
-                }
-            }
-            await interaction.reply({
-                content: `✅ Ta demande pour **${item.name}** (${item.price} points) a été envoyée au staff ! (ID: #${purchaseId})`,
-                flags: MessageFlags.Ephemeral
-            });
-            return;
-        }
-
-        if (subcommand === "demandes") {
-            if (!isStaff(interaction.member)) {
-                await replyError(interaction, "Seul le staff peut voir les demandes.");
-                return;
-            }
-            const status = interaction.options.getString("statut") ?? "pending";
-            const purchases = getShopPurchasesByStatus({ guildId: interaction.guildId, status, limit: 10 }) || [];
-            if (purchases.length === 0) {
-                await interaction.reply({ content: `📭 Aucune demande en statut **${status}**.`, flags: MessageFlags.Ephemeral });
-                return;
-            }
-            const lines = purchases.map(p => `**#${p.id}** — **${p.item_name}** par <@${p.user_id}>\nPrix: **${p.price} pts** | Statut: ${p.status}`);
-            await interaction.reply({ content: `🛒 **Demandes (${status})**\n\n${lines.join("\n\n")}`, flags: MessageFlags.Ephemeral });
-            return;
-        }
-
-        if (subcommand === "approuver") {
-            if (!isStaff(interaction.member)) {
-                await replyError(interaction, "Seul le staff peut approuver les achats.");
-                return;
-            }
-            const purchaseId = interaction.options.getInteger("id");
-            const purchase = getShopPurchaseById({ guildId: interaction.guildId, purchaseId });
-            if (!purchase) {
-                await replyError(interaction, `Demande #${purchaseId} introuvable.`);
-                return;
-            }
-            if (purchase.status !== "pending") {
-                await replyError(interaction, `Demande déjà traitée (statut: ${purchase.status}).`);
-                return;
-            }
-            if (purchase.item_key === "trophee_personnalise") {
-                const existingPurchases = getShopPurchasesByStatus({ guildId: interaction.guildId, status: "approved" }) || [];
-                if (existingPurchases.some(p => p.user_id === purchase.user_id && p.item_key === "trophee_personnalise")) {
-                    await replyError(interaction, "Limite atteinte : ce membre a déjà un trophée.");
-                    return;
-                }
-            }
-            const total = getUserTotalPoints({ guildId: interaction.guildId, userId: purchase.user_id, includeSecret: false });
-            if (total < purchase.price) {
-                await replyError(interaction, `<@${purchase.user_id}> n’a pas assez de points (prix: **${purchase.price}**, total: **${total}**).`);
-                return;
-            }
-            addPoints({
-                guildId: interaction.guildId,
-                userId: purchase.user_id,
-                amount: -purchase.price,
-                reason: `Achat boutique : ${purchase.item_name}`,
-                isSecret: false,
-                createdBy: interaction.user.id
-            });
-            updateShopPurchaseStatus({
-                guildId: interaction.guildId,
-                purchaseId,
-                status: "approved",
-                reviewedBy: interaction.user.id,
-                reviewReason: "Approuvé via commande"
-            });
-            await interaction.reply({
-                content: `✅ Demande #${purchaseId} **approuvée**. **${purchase.price} points** retirés à <@${purchase.user_id}>.`,
-                flags: MessageFlags.Ephemeral
-            });
-            return;
-        }
-
-        if (subcommand === "refuser") {
-            if (!isStaff(interaction.member)) {
-                await replyError(interaction, "Seul le staff peut refuser les achats.");
-                return;
-            }
-            const purchaseId = interaction.options.getInteger("id");
-            const raison = interaction.options.getString("raison") ?? "Aucune raison";
-            const result = updateShopPurchaseStatus({
-                guildId: interaction.guildId,
-                purchaseId,
-                status: "rejected",
-                reviewedBy: interaction.user.id,
-                reviewReason: raison
-            });
-            if (result === 0) {
-                await replyError(interaction, `Demande #${purchaseId} introuvable.`);
-                return;
-            }
-            await interaction.reply({ content: `❌ Demande #${purchaseId} **refusée**. Raison: ${raison}`, flags: MessageFlags.Ephemeral });
-            return;
-        }
-    }
-
-    // ===== BACKUP =====
-    if (interaction.commandName === "backup") {
-        const subcommand = interaction.options.getSubcommand();
-        if (subcommand === "export") {
-            if (!isStaff(interaction.member)) {
-                await replyError(interaction, "Seul le staff peut exporter la base.");
-                return;
-            }
-            const dbPath = process.env.DATABASE_PATH || path.join(__dirname, "data", "bdl.sqlite");
-            const attachment = new AttachmentBuilder(dbPath, { name: "bdl_backup.sqlite" });
-            await interaction.reply({ content: "💾 Base de données SQLite:", files: [attachment], flags: MessageFlags.Ephemeral });
-            return;
-        }
-        if (subcommand === "info") {
-            if (!isStaff(interaction.member)) {
-                await replyError(interaction, "Seul le staff peut voir les infos.");
-                return;
-            }
-            const stats = getBackupStats();
-            const dbPath = process.env.DATABASE_PATH || path.join(__dirname, "data", "bdl.sqlite");
-            const dbSize = fs.existsSync(dbPath) ? fs.statSync(dbPath).size : 0;
-            const embed = new EmbedBuilder()
-                .setTitle("🗃️ **Infos Base de Données**")
-                .setColor(0x3498db)
-                .addFields(
-                    { name: "📊 Points", value: `${stats.points}`, inline: true },
-                    { name: "💬 Rumeurs", value: `${stats.rumors}`, inline: true },
-                    { name: "🗺️ Quêtes", value: `${stats.quests}`, inline: true },
-                    { name: "✅ Validations", value: `${stats.questSubmissions}`, inline: true },
-                    { name: "🎭 Rôles temporaires", value: `${stats.temporaryRoles}`, inline: true },
-                    { name: "🕵️ Membre Mystère", value: `${stats.mysteryGames}`, inline: true },
-                    { name: "💡 Indices", value: `${stats.mysteryHints}`, inline: true },
-                    { name: "🎯 Réponses", value: `${stats.mysteryGuesses}`, inline: true },
-                    { name: "🎁 Drop Events", value: `${stats.dropEvents}`, inline: true },
-                    { name: "👥 Participants", value: `${stats.dropParticipants}`, inline: true },
-                    { name: "🛒 Achats boutique", value: `${stats.shopPurchases}`, inline: true },
-                    { name: "⚙️ Paramètres", value: `${stats.settings}`, inline: true },
-                    { name: "💾 Taille base", value: formatFileSize(dbSize), inline: false },
-                    { name: "🔄 Rôles actifs", value: `${getActiveTemporaryRoleCount()}`, inline: true },
-                    { name: "⏳ Rumeurs en attente", value: `${getPendingRumorCount()}`, inline: true },
-                    { name: "⏳ Quêtes en attente", value: `${getPendingQuestSubmissionCount()}`, inline: true }
-                )
-                .setTimestamp();
-            await interaction.reply({ embeds: [embed], ephemeral: true });
-            return;
-        }
-    }
-
-    // ===== ARCHIVE =====
-    if (interaction.commandName === "archive") {
-        const subcommand = interaction.options.getSubcommand();
-        if (subcommand === "old_drops") {
-            if (!isStaff(interaction.member)) {
-                await replyError(interaction, "Seul le staff peut nettoyer les données.");
-                return;
-            }
-            const confirmer = interaction.options.getBoolean("confirmer");
-            const jours = interaction.options.getInteger("jours") ?? 30;
-            if (!confirmer) {
-                await interaction.reply({
-                    content: `⚠️ **Attention** : Cette commande supprimera les Drop Events **terminés depuis +${jours} jours**.\\nUtilise \\`/archive old_drops confirmer:true jours:${jours}\\`.`,
-                    flags: MessageFlags.Ephemeral
-                });
-                return;
-            }
-            const result = deleteOldDropEvents({ beforeDate: getCleanupDate(jours) });
-            await interaction.reply({
-                content: `🗑️ **${result.events} Drop Events** et **${result.participants} participants** supprimés.`,
-                flags: MessageFlags.Ephemeral
-            });
-            return;
-        }
-        if (subcommand === "old_rumors") {
-            if (!isStaff(interaction.member)) {
-                await replyError(interaction, "Seul le staff peut nettoyer les données.");
-                return;
-            }
-            const confirmer = interaction.options.getBoolean("confirmer");
-            const jours = interaction.options.getInteger("jours") ?? 30;
-            if (!confirmer) {
-                await interaction.reply({
-                    content: `⚠️ **Attention** : Supprimera les rumeurs **refusées depuis +${jours} jours**.\\nUtilise \\`/archive old_rumors confirmer:true jours:${jours}\\`.`,
-                    flags: MessageFlags.Ephemeral
-                });
-                return;
-            }
-            const result = deleteOldRejectedRumors({ beforeDate: getCleanupDate(jours) });
-            await interaction.reply({ content: `🗑️ **${result.rumors} rumeurs** supprimées.`, flags: MessageFlags.Ephemeral });
-            return;
-        }
-        if (subcommand === "old_mysteries") {
-            if (!isStaff(interaction.member)) {
-                await replyError(interaction, "Seul le staff peut nettoyer les données.");
-                return;
-            }
-            const confirmer = interaction.options.getBoolean("confirmer");
-            const jours = interaction.options.getInteger("jours") ?? 30;
-            if (!confirmer) {
-                await interaction.reply({
-                    content: `⚠️ **Attention** : Supprimera les parties **terminées depuis +${jours} jours**.\\nUtilise \\`/archive old_mysteries confirmer:true jours:${jours}\\`.`,
-                    flags: MessageFlags.Ephemeral
-                });
-                return;
-            }
-            const result = deleteOldMysteryGames({ beforeDate: getCleanupDate(jours) });
-            await interaction.reply({
-                content: `🗑️ **${result.games} parties**, **${result.hints} indices** et **${result.guesses} réponses** supprimés.`,
-                flags: MessageFlags.Ephemeral
-            });
-            return;
-        }
-        if (subcommand === "old_temp_roles") {
-            if (!isStaff(interaction.member)) {
-                await replyError(interaction, "Seul le staff peut nettoyer les données.");
-                return;
-            }
-            const confirmer = interaction.options.getBoolean("confirmer");
-            const jours = interaction.options.getInteger("jours") ?? 30;
-            if (!confirmer) {
-                await interaction.reply({
-                    content: `⚠️ **Attention** : Supprimera les rôles **retirés depuis +${jours} jours**.\\nUtilise \\`/archive old_temp_roles confirmer:true jours:${jours}\\`.`,
-                    flags: MessageFlags.Ephemeral
-                });
-                return;
-            }
-            const result = deleteOldRemovedTemporaryRoles({ beforeDate: getCleanupDate(jours) });
-            await interaction.reply({ content: `🗑️ **${result.temporaryRoles} rôles** supprimés.`, flags: MessageFlags.Ephemeral });
-            return;
-        }
-        if (subcommand === "vacuum") {
-            if (!isStaff(interaction.member)) {
-                await replyError(interaction, "Seul le staff peut optimiser la base.");
-                return;
-            }
-            const confirmer = interaction.options.getBoolean("confirmer");
-            if (!confirmer) {
-                await interaction.reply({
-                    content: "⚠️ **Attention** : Optimise le fichier SQLite.\\nUtilise `/archive vacuum confirmer:true`.",
-                    flags: MessageFlags.Ephemeral
-                });
-                return;
-            }
-            vacuumDatabase();
-            await interaction.reply({ content: "✅ Base de données optimisée (VACUUM).", flags: MessageFlags.Ephemeral });
-            return;
-        }
-        if (subcommand === "info") {
-            await interaction.reply({
-                content:
-                    `🗑️ **Commandes d’archive**\\n\\n` +
-                    `Nettoie les anciennes données pour éviter que la base ne devienne trop grosse.\\n\\n` +
-                    `**Disponibles :**\\n` +
-                    `- /archive old_drops : Supprime les Drop Events terminés\\n` +
-                    `- /archive old_rumors : Supprime les rumeurs refusées\\n` +
-                    `- /archive old_mysteries : Supprime les parties Membre Mystère terminées\\n` +
-                    `- /archive old_temp_roles : Supprime l’historique des rôles temporaires\\n` +
-                    `- /archive vacuum : Optimise le fichier SQLite\\n\\n` +
-                    `⚠️ **Toutes ces commandes nécessitent **confirmer:true** et sont réservées au staff.`,
-                flags: MessageFlags.Ephemeral
-            });
-            return;
-        }
-    }
-}
-
-/* =========================
-   ÉCOUTEURS D'ÉVÉNEMENTS
-========================= */
-
-client.once(Events.ClientReady, (c) => {
-    console.log(`✅ Bot connecté en tant que ${c.user.tag} (ID: ${c.user.id})`);
-
-    // Nettoyage initial des rôles expirés
-    cleanupExpiredTemporaryRoles(c).catch(console.error);
-
-    // Tâches planifiées
-    cron.schedule("*/10 * * * *", () => cleanupExpiredTemporaryRoles(c).catch(console.error));
-    cron.schedule("0 18 * * 3,5", () => { // Mercredi et vendredi à 18h
-        c.guilds.cache.forEach(g => publishMysteryHint(c, g.id, 1).catch(console.error));
-    });
-    cron.schedule("0 19 * * 3,5", () => { // Mercredi et vendredi à 19h
-        c.guilds.cache.forEach(g => publishMysteryHint(c, g.id, 2).catch(console.error));
-    });
-    cron.schedule("0 20 * * 6", () => { // Samedi à 20h
-        c.guilds.cache.forEach(g => sendMysteryRevealReminder(c, g.id).catch(console.error));
-    });
-    cron.schedule("0 * * * *", () => { // Toutes les heures
-        c.guilds.cache.forEach(g => checkScheduledBumpReminder(c, g.id).catch(console.error));
-    });
-});
-
-client.on(Events.InteractionCreate, async (interaction) => {
-    if (!interaction.guild) {
-        await replyError(interaction, "Cette commande ne fonctionne que dans un serveur.");
-        return;
-    }
-    if (interaction.isChatInputCommand()) {
-        try {
-            await handleCommandInteraction(interaction);
-        } catch (error) {
-            console.error("Erreur dans une commande slash :", error);
-            await replyError(interaction, "Une erreur est survenue.");
-        }
-    } else if (interaction.isButton()) {
-        try {
-            await handleButtonInteraction(interaction);
-        } catch (error) {
-            console.error("Erreur dans un handler de bouton :", error);
-            await replyError(interaction, "Une erreur est survenue.");
-        }
-    }
-});
-
-client.on(Events.MessageCreate, async (message) => {
-    try {
-        await handleDisboardBumpMessage(message);
-    } catch (error) {
-        console.error("Erreur dans le handler de message :", error);
-    }
-});
-
-// Connexion du bot
-client.login(process.env.DISCORD_TOKEN).catch(console.error);
