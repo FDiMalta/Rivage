@@ -2175,8 +2175,7 @@ async function handleCommandInteraction(interaction) {
             const jours = interaction.options.getInteger("jours") ?? 30;
             if (!confirmer) {
                 await interaction.reply({
-                    content: `⚠️ **Attention** : Cette commande supprimera les Drop Events **terminés depuis +${jours} jours**.\\nUtilise \\`/archive old_drops confirmer:true jours:${jours}\\`.`,
-                    flags: MessageFlags.Ephemeral
+content: `⚠️ **Attention** : Cette commande supprimera les Drop Events **terminés depuis +${jours} jours**.\n\nUtilise \`/archive old_drops confirmer:true jours:${jours}\`.`,                    flags: MessageFlags.Ephemeral
                 });
                 return;
             }
