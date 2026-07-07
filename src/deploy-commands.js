@@ -326,7 +326,7 @@ const commands = [
                     option
                         .setName("image_pepites")
                         .setDescription("Image pour les pépites.")
-                        .setRequired(false)
+                        .setRequired(true)
                 )
                 // Stats
                 .addStringOption(option =>
@@ -340,7 +340,7 @@ const commands = [
                     option
                         .setName("image_stats")
                         .setDescription("Image pour les statistiques.")
-                        .setRequired(false)
+                        .setRequired(true)
                 )
                 // Rumeur
                 .addStringOption(option =>
@@ -354,7 +354,7 @@ const commands = [
                     option
                         .setName("image_rumeur")
                         .setDescription("Image pour la rumeur.")
-                        .setRequired(false)
+                        .setRequired(true)
                 )
                 // Exploit
                 .addStringOption(option =>
@@ -368,7 +368,7 @@ const commands = [
                     option
                         .setName("image_exploit")
                         .setDescription("Image pour l’exploit.")
-                        .setRequired(false)
+                        .setRequired(true)
                 )
                 // Nominations
                 .addStringOption(option =>
@@ -382,14 +382,14 @@ const commands = [
                     option
                         .setName("image_nominations")
                         .setDescription("Image pour les nominations.")
-                        .setRequired(false)
+                        .setRequired(true)
                 )
                 // Bannière principale
                 .addAttachmentOption(option =>
                     option
                         .setName("banniere")
                         .setDescription("Image ou bannière affichée en haut de la Gazette.")
-                        .setRequired(false)
+                        .setRequired(true)
                 )
         ),
 
