@@ -1218,57 +1218,150 @@ async function handleCommandInteraction(interaction) {
             return;
         }
 
-        // /gazette publier
-        if (subcommand === "publier") {
-            if (!isStaff(interaction.member)) {
-                await replyError(interaction, "Seul le staff peut publier la Gazette.");
-                return;
-            }
-            const titre = interaction.options.getString("titre");
-            const pepites = formatMultilineInput(interaction.options.getString("pepites"));
-            const stats = formatMultilineInput(interaction.options.getString("stats"));
-            const rumeur = formatMultilineInput(interaction.options.getString("rumeur"));
-            const exploit = formatMultilineInput(interaction.options.getString("exploit"));
-            const nominations = formatMultilineInput(interaction.options.getString("nominations") || "");
-            const banniere = interaction.options.getAttachment("banniere");
-
-            const gazetteChannelId = getSetting({ guildId: interaction.guildId, key: "gazette_channel_id" });
-            if (!gazetteChannelId) {
-                await replyError(interaction, "Aucun salon Gazette configuré. Utilise `/config salon`.");
-                return;
-            }
-
-            const channel = await interaction.guild.channels.fetch(gazetteChannelId).catch(() => null);
-            if (!channel?.isTextBased()) {
-                await replyError(interaction, "Salon Gazette introuvable.");
-                return;
-            }
-
-            const leaderboard = getLeaderboard({ guildId: interaction.guildId, includeSecret: false, limit: 3 });
-            const topMember = leaderboard[0] || { user_id: "Aucun", total: 0 };
-            const pointsBannerUrl = getPointsBannerUrl(topMember.total);
-
-            const embed = new EmbedBuilder()
-                .setTitle(`📰 **${titre}**`)
-                .setDescription(`**Édition du ${new Date().toLocaleDateString("fr-FR", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}**\n*La Gazette Royale qui délie les langues et lie les cœurs.*`)
-                .setColor(0x9b59b6)
-                .setImage(banniere ? banniere.url : pointsBannerUrl)
-                .addFields(
-                    { name: "💎 Pépites de la semaine", value: pepites || "Aucune", inline: false },
-                    { name: "📊 Statistiques absurdes", value: stats || "Aucune", inline: false },
-                    { name: "🗞️ Rumeur de la semaine", value: rumeur || "Aucune", inline: false },
-                    { name: "🏆 Exploit de la semaine", value: exploit || "Aucun", inline: false },
-                    { name: "👑 Classement Points BDL", value: leaderboard.length > 0 ? leaderboard.map((r, i) => `**${i + 1}.** <@${r.user_id}> — **${r.total} points**`).join("\n") : "Aucun", inline: true },
-                    { name: "🎖️ Nominations", value: nominations || "Aucune", inline: true }
-                )
-                .setFooter({ text: "Une édition signée BDL Bot | /gazette brouillon pour un modèle" })
-                .setTimestamp();
-
-            await channel.send({ embeds: [embed] });
-            await interaction.reply({ content: `✅ Gazette publiée dans ${channel} !`, flags: MessageFlags.Ephemeral });
-            return;
-        }
+       // /gazette publier
+if (subcommand === "publier") {
+    if (!isStaff(interaction.member)) {
+        await replyError(interaction, "Seul le staff peut publier la Gazette.");
+        return;
     }
+
+    // === RÉCUPÉRATION DES DONNÉES ===
+    const titre = interaction.options.getString("titre");
+    const pepites = formatMultilineInput(interaction.options.getString("pepites"));
+    const stats = formatMultilineInput(interaction.options.getString("stats"));
+    const rumeur = formatMultilineInput(interaction.options.getString("rumeur"));
+    const exploit = formatMultilineInput(interaction.options.getString("exploit"));
+    const nominations = formatMultilineInput(interaction.options.getString("nominations") || "");
+
+    // === RÉCUPÉRATION DES IMAGES ===
+    const banniere = interaction.options.getAttachment("banniere");
+    const imagePepites = interaction.options.getAttachment("image_pepites");
+    const imageStats = interaction.options.getAttachment("image_stats");
+    const imageRumeur = interaction.options.getAttachment("image_rumeur");
+    const imageExploit = interaction.options.getAttachment("image_exploit");
+    const imageNominations = interaction.options.getAttachment("image_nominations");
+
+    // === VÉRIFIER LE SALON GAZETTE ===
+    const gazetteChannelId = getSetting({ guildId: interaction.guildId, key: "gazette_channel_id" });
+    if (!gazetteChannelId) {
+        await replyError(interaction, "Aucun salon Gazette configuré. Utilise `/config salon`.");
+        return;
+    }
+
+    const channel = await interaction.guild.channels.fetch(gazetteChannelId).catch(() => null);
+    if (!channel?.isTextBased()) {
+        await replyError(interaction, "Salon Gazette introuvable.");
+        return;
+    }
+
+    // === PRÉPARATION DES EMBEDS ===
+    const embeds = [];
+    const leaderboard = getLeaderboard({ guildId: interaction.guildId, includeSecret: false, limit: 3 });
+    const topMember = leaderboard[0] || { user_id: "Aucun", total: 0 };
+    const pointsBannerUrl = getPointsBannerUrl(topMember.total);
+
+    // === EMBED PRINCIPAL (BANNIÈRE) ===
+    const mainEmbed = new EmbedBuilder()
+        .setTitle(`📰 **${titre}**`)
+        .setDescription(
+            `**Édition du ${new Date().toLocaleDateString("fr-FR", {
+                weekday: "long",
+                year: "numeric",
+                month: "long",
+                day: "numeric"
+            })}**\n` +
+            `*La Gazette Royale qui délie les langues et lie les cœurs.*`
+        )
+        .setColor(0x9b59b6)
+        .setImage(banniere ? banniere.url : pointsBannerUrl)
+        .setFooter({ text: "Une édition signée BDL Bot" })
+        .setTimestamp();
+
+    // === EMBED PÉPITES (si image fournie) ===
+    if (imagePepites) {
+        embeds.push(
+            new EmbedBuilder()
+                .setTitle("💎 **Pépites de la semaine**")
+                .setDescription(pepites)
+                .setImage(imagePepites.url)
+                .setColor(0xf1c40f)
+        );
+    } else if (pepites) {
+        mainEmbed.addFields({ name: "💎 Pépites de la semaine", value: pepites, inline: false });
+    }
+
+    // === EMBED STATS (si image fournie) ===
+    if (imageStats) {
+        embeds.push(
+            new EmbedBuilder()
+                .setTitle("📊 **Statistiques absurdes**")
+                .setDescription(stats)
+                .setImage(imageStats.url)
+                .setColor(0x3498db)
+        );
+    } else if (stats) {
+        mainEmbed.addFields({ name: "📊 Statistiques absurdes", value: stats, inline: false });
+    }
+
+    // === EMBED RUMEUR (si image fournie) ===
+    if (imageRumeur) {
+        embeds.push(
+            new EmbedBuilder()
+                .setTitle("🗞️ **Rumeur de la semaine**")
+                .setDescription(rumeur)
+                .setImage(imageRumeur.url)
+                .setColor(0xe74c3c)
+        );
+    } else if (rumeur) {
+        mainEmbed.addFields({ name: "🗞️ Rumeur de la semaine", value: rumeur, inline: false });
+    }
+
+    // === EMBED EXPLOIT (si image fournie) ===
+    if (imageExploit) {
+        embeds.push(
+            new EmbedBuilder()
+                .setTitle("🏆 **Exploit de la semaine**")
+                .setDescription(exploit)
+                .setImage(imageExploit.url)
+                .setColor(0x2ecc71)
+        );
+    } else if (exploit) {
+        mainEmbed.addFields({ name: "🏆 Exploit de la semaine", value: exploit, inline: false });
+    }
+
+    // === EMBED NOMINATIONS (si image fournie) ===
+    if (imageNominations) {
+        embeds.push(
+            new EmbedBuilder()
+                .setTitle("🎖️ **Nominations**")
+                .setDescription(nominations)
+                .setImage(imageNominations.url)
+                .setColor(0x9b59b6)
+        );
+    } else if (nominations) {
+        mainEmbed.addFields({ name: "🎖️ Nominations", value: nominations, inline: false });
+    }
+
+    // === CLASSMENT (toujours dans le mainEmbed) ===
+    if (leaderboard.length > 0) {
+        mainEmbed.addFields({
+            name: "👑 Classement Points BDL",
+            value: leaderboard.map((r, i) => `**${i + 1}.** <@${r.user_id}> — **${r.total} points**`).join("\n"),
+            inline: true
+        });
+    }
+
+    // === AJOUT DU MAIN EMBED À LA FIN ===
+    embeds.push(mainEmbed);
+
+    // === ENVOI DU MESSAGE ===
+    await channel.send({ embeds: embeds });
+    await interaction.reply({
+        content: `✅ Gazette publiée dans ${channel} avec **${embeds.length} embed(s)** !`,
+        flags: MessageFlags.Ephemeral
+    });
+    return;
+}
 
     // ===== CONFIG =====
     if (interaction.commandName === "config") {
