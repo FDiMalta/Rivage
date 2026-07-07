@@ -238,61 +238,99 @@ const commands = [
                 .setDescription("Génère un brouillon de Gazette avec les rumeurs et points.")
         )
 
-        // /gazette publier - Publie une Gazette complète.
-        .addSubcommand(subcommand =>
-            subcommand
-                .setName("publier")
-                .setDescription("Publie la Gazette BDL dans le salon Gazette.")
-                .addStringOption(option =>
-                    option
-                        .setName("titre")
-                        .setDescription("Le grand titre de la semaine.")
-                        .setRequired(true)
-                        .setMaxLength(200)
-                )
-                .addStringOption(option =>
-                    option
-                        .setName("pepites")
-                        .setDescription("Les pépites de la semaine.")
-                        .setRequired(true)
-                        .setMaxLength(1000)
-                )
-                .addStringOption(option =>
-                    option
-                        .setName("stats")
-                        .setDescription("Les statistiques absurdes.")
-                        .setRequired(true)
-                        .setMaxLength(1000)
-                )
-                .addStringOption(option =>
-                    option
-                        .setName("rumeur")
-                        .setDescription("La rumeur de la semaine.")
-                        .setRequired(true)
-                        .setMaxLength(1000)
-                )
-                .addStringOption(option =>
-                    option
-                        .setName("exploit")
-                        .setDescription("L’exploit de la semaine.")
-                        .setRequired(true)
-                        .setMaxLength(1000)
-                )
-                .addStringOption(option =>
-                    option
-                        .setName("nominations")
-                        .setDescription("Les rôles ou nominations de la semaine.")
-                        .setRequired(false)
-                        .setMaxLength(1000)
-                )
-                .addAttachmentOption(option =>
-                    option
-                        .setName("banniere")
-                        .setDescription("Image ou bannière affichée en haut de la Gazette.")
-                        .setRequired(false)
-                )
-        ),
-
+       /*
+  /gazette publier
+  Publie une Gazette complète dans le salon configuré.
+*/
+.addSubcommand(subcommand =>
+    subcommand
+        .setName("publier")
+        .setDescription("Publie la Gazette BDL dans le salon Gazette.")
+        .addStringOption(option =>
+            option
+                .setName("titre")
+                .setDescription("Le grand titre de la semaine.")
+                .setRequired(true)
+                .setMaxLength(200)
+        )
+        // === PÉPITES ===
+        .addStringOption(option =>
+            option
+                .setName("pepites")
+                .setDescription("Les pépites de la semaine.")
+                .setRequired(true)
+                .setMaxLength(1000)
+        )
+        .addAttachmentOption(option =>
+            option
+                .setName("image_pepites")
+                .setDescription("Image pour les pépites.")
+                .setRequired(false)
+        )
+        // === STATS ===
+        .addStringOption(option =>
+            option
+                .setName("stats")
+                .setDescription("Les statistiques absurdes.")
+                .setRequired(true)
+                .setMaxLength(1000)
+        )
+        .addAttachmentOption(option =>
+            option
+                .setName("image_stats")
+                .setDescription("Image pour les statistiques.")
+                .setRequired(false)
+        )
+        // === RUMEUR ===
+        .addStringOption(option =>
+            option
+                .setName("rumeur")
+                .setDescription("La rumeur de la semaine.")
+                .setRequired(true)
+                .setMaxLength(1000)
+        )
+        .addAttachmentOption(option =>
+            option
+                .setName("image_rumeur")
+                .setDescription("Image pour la rumeur.")
+                .setRequired(false)
+        )
+        // === EXPLOIT ===
+        .addStringOption(option =>
+            option
+                .setName("exploit")
+                .setDescription("L’exploit de la semaine.")
+                .setRequired(true)
+                .setMaxLength(1000)
+        )
+        .addAttachmentOption(option =>
+            option
+                .setName("image_exploit")
+                .setDescription("Image pour l’exploit.")
+                .setRequired(false)
+        )
+        // === NOMINATIONS ===
+        .addStringOption(option =>
+            option
+                .setName("nominations")
+                .setDescription("Les rôles ou nominations de la semaine.")
+                .setRequired(false)
+                .setMaxLength(1000)
+        )
+        .addAttachmentOption(option =>
+            option
+                .setName("image_nominations")
+                .setDescription("Image pour les nominations.")
+                .setRequired(false)
+        )
+        // === BANNIÈRE PRINCIPALE ===
+        .addAttachmentOption(option =>
+            option
+                .setName("banniere")
+                .setDescription("Image ou bannière affichée en haut de la Gazette.")
+                .setRequired(false)
+        )
+)
     // /config - Configure les salons et rôles.
     new SlashCommandBuilder()
         .setName("config")
