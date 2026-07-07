@@ -1406,6 +1406,34 @@ async function handleCommandInteraction(interaction) {
                     mentionedUserId: membreMentionne?.id,
                     proofLink: lien
                 });
+
+                const staffChannelId = getSetting({ guildId: interaction.guildId, key: "rumors_staff_channel_id" });
+        if (staffChannelId) {
+            const staffChannel = await interaction.guild.channels.fetch(staffChannelId).catch(() => null);
+            if (staffChannel?.isTextBased()) {
+                const embed = new EmbedBuilder()
+                    .setTitle("🗺️ Nouvelle validation de quête")
+                    .setDescription(truncate(preuve, 1000))
+                    .addFields(
+                        { name: "ID", value: `#${submissionId}`, inline: true },
+                        { name: "Quête", value: `**${quest.title}** (ID: #${questId})`, inline: false },
+                        { name: "Auteur", value: `${interaction.user}`, inline: true },
+                        { name: "Membre mentionné", value: membreMentionne ? `${membreMentionne}` : "Aucun", inline: true },
+                        { name: "Lien", value: lien || "Aucun", inline: false },
+                        { name: "Statut", value: "En attente", inline: true }
+                    )
+                    .setFooter({ text: "Clique sur un bouton ou utilise /quete approuver/refuser" })
+                    .setTimestamp();
+
+                applyAttachmentImage(embed, photo);
+
+                await staffChannel.send({
+                    embeds: [embed],
+                    components: [createQuestSubmissionButtons(submissionId)]
+                });
+            }
+        }
+                
                 await interaction.reply({ content: `✅ Ta validation pour **${quest.title}** a été envoyée au staff !`, flags: MessageFlags.Ephemeral });
             } catch (error) {
                 await replyError(interaction, "Tu as déjà soumis une validation pour cette quête.");
