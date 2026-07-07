@@ -161,17 +161,17 @@ const SHOP_ITEMS = {
         description: "Demande l'ajout d'un emoji personnalisé sur le serveur."
     },
     commande_personnalisee: {
-        name: "⚙️ Commande personnalisée",
+        name: "💻 Commande personnalisée",
         price: 20,
         description: "Crée une commande slash personnalisée pour le bot."
     },
     xp_boost: {
-        name: "📈 Boost d'XP",
+        name: "⚡ Boost d'XP",
         price: 5,
         description: "Obtiens +10 XP pour ton profil."
     },
     nude_colo: {
-        name: "👕 Nude de colo (fausse)",
+        name: "📸 Nude de colo (fausse)",
         price: 15,
         description: "Ajoute une fausse photo de 'nude de colo' à ton profil."
     },
@@ -213,13 +213,6 @@ function addDays(date, days) {
     return result;
 }
 
-// Retire un nombre de jours à une date.
-function subtractDays(date, days) {
-    const result = new Date(date.getTime());
-    result.setDate(result.getDate() - days);
-    return result;
-}
-
 // Formate une date pour la base SQLite.
 function formatDateForDatabase(date) {
     return date.toISOString();
@@ -227,7 +220,14 @@ function formatDateForDatabase(date) {
 
 // Calcule une date limite pour le nettoyage.
 function getCleanupDate(days) {
-    return subtractDays(new Date(), days).toISOString();
+    return formatDateForDatabase(subtractDays(new Date(), days));
+}
+
+// Retire un nombre de jours à une date.
+function subtractDays(date, days) {
+    const result = new Date(date.getTime());
+    result.setDate(result.getDate() - days);
+    return result;
 }
 
 // Formate la taille d'un fichier.
@@ -599,7 +599,7 @@ async function handleDropButton(interaction) {
         .setDescription(
             isFinished
                 ? `Le Drop Event est terminé.\n\nRécompense : **+${drop.reward_points} point(s)** par gagnant.`
-                : `Les **${drop.max_winners} premiers** qui cliquent gagnent.\n\n` +
+                : `Les **${drop.max_winners} premiers** à cliquer gagnent.\n\n` +
                   `Récompense : **+${drop.reward_points} point(s)**\n\n` +
                   `Places restantes : **${drop.max_winners - participants.length}**`
         );
@@ -642,6 +642,7 @@ async function handleShopPurchaseButton(interaction) {
         return;
     }
 
+    // Vérification spéciale pour le trophée (1 max par personne)
     if (action === "approve" && purchase.item_key === "trophee_personnalise") {
         const existingPurchases = getShopPurchasesByStatus({
             guildId: interaction.guildId,
@@ -1935,3 +1936,219 @@ async function handleCommandInteraction(interaction) {
             return;
         }
         const totalPoints = getUserTotalPoints({ guildId: interaction.guildId, userId: membre.id, includeSecret: secrets });
+        const approvedRumors = getUserApprovedRumorCount({ guildId: interaction.guildId, userId: membre.id });
+        const approvedQuests = getUserApprovedQuestCount({ guildId: interaction.guildId, userId: membre.id });
+        const rank = getUserRank({ guildId: interaction.guildId, userId: membre.id, includeSecret: secrets });
+        const bannerUrl = getPointsBannerUrl(totalPoints);
+
+        const embed = new EmbedBuilder()
+            .setTitle(`📜 Profil BDL — ${membre.username}`)
+            .setDescription(`**Points** : **${totalPoints}**${secrets ? " (secrets inclus)" : ""}`)
+            .setColor(0x3498db)
+            .setImage(bannerUrl)
+            .addFields(
+                { name: "🏆 Classement", value: rank ? `#${rank.rank}` : "Non classé", inline: true },
+                { name: "📜 Rumeurs approuvées", value: `**${approvedRumors}**`, inline: true },
+                { name: "🗺️ Quêtes validées", value: `**${approvedQuests}**`, inline: true }
+            )
+            .setFooter({ text: "BDL Bot — /boutique pour acheter des récompenses" })
+            .setTimestamp();
+        await interaction.reply({ embeds: [embed] });
+        return;
+    }
+
+    // ===== BOUTIQUE =====
+    if (interaction.commandName === "boutique") {
+        const subcommand = interaction.options.getSubcommand();
+
+        if (subcommand === "voir") {
+            const embed = new EmbedBuilder()
+                .setTitle("🛒 **Boutique de points BDL**")
+                .setDescription("Achète des récompenses avec tes points !\n\n" + formatShopItemList())
+                .setColor(0xf1c40f)
+                .setFooter({ text: "Utilise /boutique acheter pour un achat" })
+                .setTimestamp();
+            await interaction.reply({ embeds: [embed] });
+            return;
+        }
+
+        if (subcommand === "acheter") {
+            const itemKey = interaction.options.getString("item");
+            const note = interaction.options.getString("note") ?? null;
+            const item = SHOP_ITEMS[itemKey];
+            if (!item) {
+                await replyError(interaction, "Objet introuvable.");
+                return;
+            }
+            const userTotal = getUserTotalPoints({ guildId: interaction.guildId, userId: interaction.user.id, includeSecret: false });
+            if (userTotal < item.price) {
+                await replyError(interaction, `Tu n’as pas assez de points (prix: **${item.price}**, ton total: **${userTotal}**).`);
+                return;
+            }
+            if (itemKey === "trophee_personnalise") {
+                const existingPurchases = getShopPurchasesByStatus({ guildId: interaction.guildId, status: "approved" }) || [];
+                if (existingPurchases.some(p => p.user_id === interaction.user.id && p.item_key === "trophee_personnalise")) {
+                    await replyError(interaction, "Limite atteinte : 1 trophée max par personne.");
+                    return;
+                }
+            }
+            const purchaseId = addShopPurchase({
+                guildId: interaction.guildId,
+                userId: interaction.user.id,
+                itemKey,
+                itemName: item.name,
+                price: item.price,
+                note
+            });
+            const staffChannelId = getSetting({ guildId: interaction.guildId, key: "shop_staff_channel_id" });
+            if (staffChannelId) {
+                const staffChannel = await interaction.guild.channels.fetch(staffChannelId).catch(() => null);
+                if (staffChannel?.isTextBased()) {
+                    const embed = new EmbedBuilder()
+                        .setTitle("🛒 Nouvelle demande d'achat")
+                        .setDescription(`**${item.name}** — **${item.price} points**`)
+                        .addFields(
+                            { name: "ID", value: `#${purchaseId}`, inline: true },
+                            { name: "Acheteur", value: `${interaction.user}`, inline: true },
+                            { name: "Note", value: note || "Aucune", inline: false },
+                            { name: "Statut", value: "En attente", inline: true }
+                        )
+                        .setFooter({ text: "Clique sur un bouton ou utilise /boutique approuver/refuser" })
+                        .setTimestamp();
+                    await staffChannel.send({ embeds: [embed], components: [createShopPurchaseButtons(purchaseId)] });
+                }
+            }
+            await interaction.reply({
+                content: `✅ Ta demande pour **${item.name}** (${item.price} points) a été envoyée au staff ! (ID: #${purchaseId})`,
+                flags: MessageFlags.Ephemeral
+            });
+            return;
+        }
+
+        if (subcommand === "demandes") {
+            if (!isStaff(interaction.member)) {
+                await replyError(interaction, "Seul le staff peut voir les demandes.");
+                return;
+            }
+            const status = interaction.options.getString("statut") ?? "pending";
+            const purchases = getShopPurchasesByStatus({ guildId: interaction.guildId, status, limit: 10 }) || [];
+            if (purchases.length === 0) {
+                await interaction.reply({ content: `📭 Aucune demande en statut **${status}**.`, flags: MessageFlags.Ephemeral });
+                return;
+            }
+            const lines = purchases.map(p => `**#${p.id}** — **${p.item_name}** par <@${p.user_id}>\nPrix: **${p.price} pts** | Statut: ${p.status}`);
+            await interaction.reply({ content: `🛒 **Demandes (${status})**\n\n${lines.join("\n\n")}`, flags: MessageFlags.Ephemeral });
+            return;
+        }
+
+        if (subcommand === "approuver") {
+            if (!isStaff(interaction.member)) {
+                await replyError(interaction, "Seul le staff peut approuver les achats.");
+                return;
+            }
+            const purchaseId = interaction.options.getInteger("id");
+            const purchase = getShopPurchaseById({ guildId: interaction.guildId, purchaseId });
+            if (!purchase) {
+                await replyError(interaction, `Demande #${purchaseId} introuvable.`);
+                return;
+            }
+            if (purchase.status !== "pending") {
+                await replyError(interaction, `Demande déjà traitée (statut: ${purchase.status}).`);
+                return;
+            }
+            if (purchase.item_key === "trophee_personnalise") {
+                const existingPurchases = getShopPurchasesByStatus({ guildId: interaction.guildId, status: "approved" }) || [];
+                if (existingPurchases.some(p => p.user_id === purchase.user_id && p.item_key === "trophee_personnalise")) {
+                    await replyError(interaction, "Limite atteinte : ce membre a déjà un trophée.");
+                    return;
+                }
+            }
+            const total = getUserTotalPoints({ guildId: interaction.guildId, userId: purchase.user_id, includeSecret: false });
+            if (total < purchase.price) {
+                await replyError(interaction, `<@${purchase.user_id}> n’a pas assez de points (prix: **${purchase.price}**, total: **${total}**).`);
+                return;
+            }
+            addPoints({
+                guildId: interaction.guildId,
+                userId: purchase.user_id,
+                amount: -purchase.price,
+                reason: `Achat boutique : ${purchase.item_name}`,
+                isSecret: false,
+                createdBy: interaction.user.id
+            });
+            updateShopPurchaseStatus({
+                guildId: interaction.guildId,
+                purchaseId,
+                status: "approved",
+                reviewedBy: interaction.user.id,
+                reviewReason: "Approuvé via commande"
+            });
+            await interaction.reply({
+                content: `✅ Demande #${purchaseId} **approuvée**. **${purchase.price} points** retirés à <@${purchase.user_id}>.`,
+                flags: MessageFlags.Ephemeral
+            });
+            return;
+        }
+
+        if (subcommand === "refuser") {
+            if (!isStaff(interaction.member)) {
+                await replyError(interaction, "Seul le staff peut refuser les achats.");
+                return;
+            }
+            const purchaseId = interaction.options.getInteger("id");
+            const raison = interaction.options.getString("raison") ?? "Aucune raison";
+            const result = updateShopPurchaseStatus({
+                guildId: interaction.guildId,
+                purchaseId,
+                status: "rejected",
+                reviewedBy: interaction.user.id,
+                reviewReason: raison
+            });
+            if (result === 0) {
+                await replyError(interaction, `Demande #${purchaseId} introuvable.`);
+                return;
+            }
+            await interaction.reply({ content: `❌ Demande #${purchaseId} **refusée**. Raison: ${raison}`, flags: MessageFlags.Ephemeral });
+            return;
+        }
+    }
+
+    // ===== BACKUP =====
+    if (interaction.commandName === "backup") {
+        const subcommand = interaction.options.getSubcommand();
+        if (subcommand === "export") {
+            if (!isStaff(interaction.member)) {
+                await replyError(interaction, "Seul le staff peut exporter la base.");
+                return;
+            }
+            const dbPath = process.env.DATABASE_PATH || path.join(__dirname, "data", "bdl.sqlite");
+            const attachment = new AttachmentBuilder(dbPath, { name: "bdl_backup.sqlite" });
+            await interaction.reply({ content: "💾 Base de données SQLite:", files: [attachment], flags: MessageFlags.Ephemeral });
+            return;
+        }
+        if (subcommand === "info") {
+            if (!isStaff(interaction.member)) {
+                await replyError(interaction, "Seul le staff peut voir les infos.");
+                return;
+            }
+            const stats = getBackupStats();
+            const dbPath = process.env.DATABASE_PATH || path.join(__dirname, "data", "bdl.sqlite");
+            const dbSize = fs.existsSync(dbPath) ? fs.statSync(dbPath).size : 0;
+            const embed = new EmbedBuilder()
+                .setTitle("🗃️ **Infos Base de Données**")
+                .setColor(0x3498db)
+                .addFields(
+                    { name: "📊 Points", value: `${stats.points}`, inline: true },
+                    { name: "💬 Rumeurs", value: `${stats.rumors}`, inline: true },
+                    { name: "🗺️ Quêtes", value: `${stats.quests}`, inline: true },
+                    { name: "✅ Validations", value: `${stats.questSubmissions}`, inline: true },
+                    { name: "🎭 Rôles temporaires", value: `${stats.temporaryRoles}`, inline: true },
+                    { name: "🕵️ Membre Mystère", value: `${stats.mysteryGames}`, inline: true },
+                    { name: "💡 Indices", value: `${stats.mysteryHints}`, inline: true },
+                    { name: "🎯 Réponses", value: `${stats.mysteryGuesses}`, inline: true },
+                    { name: "🎁 Drop Events", value: `${stats.dropEvents}`, inline: true },
+                    { name: "👥 Participants", value: `${stats.dropParticipants}`, inline: true },
+                    { name: "🛒 Achats boutique", value: `${stats.shopPurchases}`, inline: true },
+                    { name: "⚙️ Paramètres", value: `${stats.settings}`, inline: true },
+                    { name: "💾 Taille base", value: formatFileSize(dbSize), inline: false },
+                    { name: "🔄 Rôles actifs", value: `${getActiveTemporaryRoleCount()}`, inline: true },
