@@ -1,11 +1,7 @@
 // Charge les variables du fichier .env.
-// Ici, on utilise surtout DISCORD_TOKEN, CLIENT_ID et GUILD_ID.
 require("dotenv").config();
 
 // Importe les outils nécessaires de discord.js.
-// REST + Routes servent à envoyer les commandes slash à Discord.
-// SlashCommandBuilder sert à construire les commandes.
-// ChannelType sert à limiter certaines options aux salons texte.
 const {
     REST,
     Routes,
@@ -15,42 +11,21 @@ const {
 
 /*
   Ce tableau contient toutes les commandes slash du bot.
-
-  Chaque new SlashCommandBuilder() correspond à une commande principale :
-  /ping
-  /points
-  /rumeur
-  /gazette
-  etc.
-
-  Les .addSubcommand() ajoutent des sous-commandes :
-  /points ajouter
-  /points retirer
-  /points voir
+  Chaque SlashCommandBuilder correspond à une commande principale.
+  Les .addSubcommand() ajoutent des sous-commandes.
 */
 const commands = [
-    /*
-      /ping
-      Commande simple pour vérifier que le bot répond.
-    */
+    // /ping - Commande simple pour vérifier que le bot répond.
     new SlashCommandBuilder()
         .setName("ping")
         .setDescription("Teste si le bot BDL fonctionne."),
 
-    /*
-      /points
-      Système de points du serveur.
-      Permet d’ajouter, retirer, voir, classer et consulter l’historique des points.
-    */
+    // /points - Système de points du serveur.
     new SlashCommandBuilder()
         .setName("points")
         .setDescription("Gère les points BDL.")
 
-        /*
-          /points ajouter
-          Réservé au staff dans index.js.
-          Ajoute des points publics ou secrets à un membre.
-        */
+        // /points ajouter - Réservé au staff.
         .addSubcommand(subcommand =>
             subcommand
                 .setName("ajouter")
@@ -84,11 +59,7 @@ const commands = [
                 )
         )
 
-        /*
-          /points retirer
-          Ajoute une valeur négative dans la base.
-          Ça permet de corriger une erreur sans supprimer l’historique.
-        */
+        // /points retirer - Ajoute une valeur négative.
         .addSubcommand(subcommand =>
             subcommand
                 .setName("retirer")
@@ -122,11 +93,7 @@ const commands = [
                 )
         )
 
-        /*
-          /points voir
-          Affiche les points d’un membre.
-          L’option inclure_secrets est vérifiée dans index.js pour être réservée au staff.
-        */
+        // /points voir - Affiche les points d’un membre.
         .addSubcommand(subcommand =>
             subcommand
                 .setName("voir")
@@ -145,10 +112,7 @@ const commands = [
                 )
         )
 
-        /*
-          /points classement
-          Affiche le classement général des points.
-        */
+        // /points classement - Affiche le classement général.
         .addSubcommand(subcommand =>
             subcommand
                 .setName("classement")
@@ -161,10 +125,7 @@ const commands = [
                 )
         )
 
-        /*
-          /points historique
-          Affiche les dernières entrées de points d’un membre.
-        */
+        // /points historique - Affiche l’historique des points.
         .addSubcommand(subcommand =>
             subcommand
                 .setName("historique")
@@ -183,19 +144,12 @@ const commands = [
                 )
         ),
 
-    /*
-      /rumeur
-      Système de rumeurs pour la Gazette.
-    */
+    // /rumeur - Système de rumeurs pour la Gazette.
     new SlashCommandBuilder()
         .setName("rumeur")
         .setDescription("Gère les rumeurs pour la Gazette BDL.")
 
-        /*
-          /rumeur proposer
-          Permet à un membre de proposer une rumeur.
-          Elle arrive ensuite en attente de validation.
-        */
+        // /rumeur proposer - Propose une rumeur.
         .addSubcommand(subcommand =>
             subcommand
                 .setName("proposer")
@@ -221,10 +175,7 @@ const commands = [
                 )
         )
 
-        /*
-          /rumeur liste
-          Permet au staff de voir les rumeurs selon leur statut.
-        */
+        // /rumeur liste - Liste les rumeurs selon leur statut.
         .addSubcommand(subcommand =>
             subcommand
                 .setName("liste")
@@ -242,10 +193,7 @@ const commands = [
                 )
         )
 
-        /*
-          /rumeur approuver
-          Permet au staff d’approuver une rumeur avec son ID.
-        */
+        // /rumeur approuver - Approuve une rumeur.
         .addSubcommand(subcommand =>
             subcommand
                 .setName("approuver")
@@ -258,10 +206,7 @@ const commands = [
                 )
         )
 
-        /*
-          /rumeur refuser
-          Permet au staff de refuser une rumeur avec une raison optionnelle.
-        */
+        // /rumeur refuser - Refuse une rumeur.
         .addSubcommand(subcommand =>
             subcommand
                 .setName("refuser")
@@ -281,28 +226,19 @@ const commands = [
                 )
         ),
 
-    /*
-      /gazette
-      Commandes liées à la Gazette BDL.
-    */
+    // /gazette - Commandes liées à la Gazette BDL.
     new SlashCommandBuilder()
         .setName("gazette")
         .setDescription("Prépare ou publie la Gazette BDL.")
 
-        /*
-          /gazette brouillon
-          Génère une base automatique de Gazette.
-        */
+        // /gazette brouillon - Génère une base automatique.
         .addSubcommand(subcommand =>
             subcommand
                 .setName("brouillon")
                 .setDescription("Génère un brouillon de Gazette avec les rumeurs et points.")
         )
 
-        /*
-          /gazette publier
-          Publie une Gazette complète dans le salon configuré.
-        */
+        // /gazette publier - Publie une Gazette complète.
         .addSubcommand(subcommand =>
             subcommand
                 .setName("publier")
@@ -310,7 +246,7 @@ const commands = [
                 .addStringOption(option =>
                     option
                         .setName("titre")
-                        .setDescription("Le grand titre absurde de la semaine.")
+                        .setDescription("Le grand titre de la semaine.")
                         .setRequired(true)
                         .setMaxLength(200)
                 )
@@ -357,18 +293,12 @@ const commands = [
                 )
         ),
 
-    /*
-      /config
-      Sert à configurer les salons et le rôle staff directement depuis Discord.
-    */
+    // /config - Configure les salons et rôles.
     new SlashCommandBuilder()
         .setName("config")
         .setDescription("Configure les salons et rôles utilisés par le bot BDL.")
 
-        /*
-          /config salon
-          Enregistre les salons utilisés par les différents systèmes du bot.
-        */
+        // /config salon - Définit un salon pour une fonction.
         .addSubcommand(subcommand =>
             subcommand
                 .setName("salon")
@@ -400,10 +330,7 @@ const commands = [
                 )
         )
 
-        /*
-          /config role_staff
-          Définit le rôle qui aura accès aux commandes staff BDL.
-        */
+        // /config role_staff - Définit le rôle staff.
         .addSubcommand(subcommand =>
             subcommand
                 .setName("role_staff")
@@ -416,10 +343,7 @@ const commands = [
                 )
         )
 
-        /*
-          /config role_bump
-          Définit le rôle à ping pour les rappels de bump.
-        */
+        // /config role_bump - Définit le rôle à ping pour les rappels de bump.
         .addSubcommand(subcommand =>
             subcommand
                 .setName("role_bump")
@@ -432,28 +356,19 @@ const commands = [
                 )
         )
 
-        /*
-          /config voir
-          Affiche toute la configuration enregistrée.
-        */
+        // /config voir - Affiche la configuration actuelle.
         .addSubcommand(subcommand =>
             subcommand
                 .setName("voir")
                 .setDescription("Affiche la configuration actuelle du bot.")
         ),
 
-    /*
-      /quete
-      Système de quêtes hebdomadaires.
-    */
+    // /quete - Système de quêtes hebdomadaires.
     new SlashCommandBuilder()
         .setName("quete")
         .setDescription("Gère les quêtes hebdomadaires BDL.")
 
-        /*
-          /quete publier
-          Crée une quête avec points et rôle optionnel.
-        */
+        // /quete publier - Crée une quête.
         .addSubcommand(subcommand =>
             subcommand
                 .setName("publier")
@@ -502,20 +417,14 @@ const commands = [
                 )
         )
 
-        /*
-          /quete liste
-          Affiche les quêtes actives.
-        */
+        // /quete liste - Affiche les quêtes actives.
         .addSubcommand(subcommand =>
             subcommand
                 .setName("liste")
                 .setDescription("Affiche les quêtes actives.")
         )
 
-        /*
-          /quete valider
-          Permet à un membre de demander la validation d’une quête.
-        */
+        // /quete valider - Demande la validation d’une quête.
         .addSubcommand(subcommand =>
             subcommand
                 .setName("valider")
@@ -554,10 +463,7 @@ const commands = [
                 )
         )
 
-        /*
-          /quete submissions
-          Liste les validations de quêtes pour le staff.
-        */
+        // /quete submissions - Liste les validations de quêtes.
         .addSubcommand(subcommand =>
             subcommand
                 .setName("submissions")
@@ -575,10 +481,7 @@ const commands = [
                 )
         )
 
-        /*
-          /quete approuver
-          Approuve une validation et attribue les points/rôles.
-        */
+        // /quete approuver - Approuve une validation.
         .addSubcommand(subcommand =>
             subcommand
                 .setName("approuver")
@@ -591,10 +494,7 @@ const commands = [
                 )
         )
 
-        /*
-          /quete refuser
-          Refuse une validation.
-        */
+        // /quete refuser - Refuse une validation.
         .addSubcommand(subcommand =>
             subcommand
                 .setName("refuser")
@@ -614,10 +514,7 @@ const commands = [
                 )
         )
 
-        /*
-          /quete fermer
-          Ferme une quête pour empêcher de nouvelles validations.
-        */
+        // /quete fermer - Ferme une quête.
         .addSubcommand(subcommand =>
             subcommand
                 .setName("fermer")
@@ -630,18 +527,12 @@ const commands = [
                 )
         ),
 
-    /*
-      /role
-      Système de rôles temporaires.
-    */
+    // /role - Système de rôles temporaires.
     new SlashCommandBuilder()
         .setName("role")
         .setDescription("Gère les rôles temporaires BDL.")
 
-        /*
-          /role temporaire
-          Donne un rôle temporaire à un membre.
-        */
+        // /role temporaire - Donne un rôle temporaire.
         .addSubcommand(subcommand =>
             subcommand
                 .setName("temporaire")
@@ -675,28 +566,19 @@ const commands = [
                 )
         )
 
-        /*
-          /role liste
-          Liste les rôles temporaires encore actifs.
-        */
+        // /role liste - Liste les rôles temporaires actifs.
         .addSubcommand(subcommand =>
             subcommand
                 .setName("liste")
                 .setDescription("Liste les rôles temporaires actifs.")
         ),
 
-    /*
-      /mystere
-      Système du Membre Mystère.
-    */
+    // /mystere - Système du Membre Mystère.
     new SlashCommandBuilder()
         .setName("mystere")
         .setDescription("Gère le Membre Mystère BDL.")
 
-        /*
-          /mystere set
-          Définit le membre mystère de la semaine.
-        */
+        // /mystere set - Définit le membre mystère.
         .addSubcommand(subcommand =>
             subcommand
                 .setName("set")
@@ -722,10 +604,7 @@ const commands = [
                 )
         )
 
-        /*
-          /mystere indice
-          Ajoute un indice et peut le publier immédiatement.
-        */
+        // /mystere indice - Ajoute un indice.
         .addSubcommand(subcommand =>
             subcommand
                 .setName("indice")
@@ -753,10 +632,7 @@ const commands = [
                 )
         )
 
-        /*
-          /mystere guess
-          Permet aux membres de proposer une réponse.
-        */
+        // /mystere guess - Propose une réponse.
         .addSubcommand(subcommand =>
             subcommand
                 .setName("guess")
@@ -769,38 +645,26 @@ const commands = [
                 )
         )
 
-        /*
-          /mystere reveal
-          Révèle le membre mystère et donne les points.
-        */
+        // /mystere reveal - Révèle le membre mystère.
         .addSubcommand(subcommand =>
             subcommand
                 .setName("reveal")
                 .setDescription("Révèle le Membre Mystère et donne les points au gagnant.")
         )
 
-        /*
-          /mystere statut
-          Affiche l’état de la partie.
-        */
+        // /mystere statut - Affiche l’état de la partie.
         .addSubcommand(subcommand =>
             subcommand
                 .setName("statut")
                 .setDescription("Affiche le statut du Membre Mystère.")
         ),
 
-    /*
-      /drop
-      Système de Drop Event avec bouton de participation.
-    */
+    // /drop - Système de Drop Event.
     new SlashCommandBuilder()
         .setName("drop")
         .setDescription("Gère les Drop Events BDL.")
 
-        /*
-          /drop lancer
-          Lance un drop avec un nombre limité de gagnants.
-        */
+        // /drop lancer - Lance un drop.
         .addSubcommand(subcommand =>
             subcommand
                 .setName("lancer")
@@ -836,18 +700,12 @@ const commands = [
                 )
         ),
 
-    /*
-      /grandmaitre
-      Système mensuel du Grand Maître du Serveur.
-    */
+    // /grandmaitre - Système mensuel du Grand Maître.
     new SlashCommandBuilder()
         .setName("grandmaitre")
         .setDescription("Gère le titre mensuel de Grand Maître du Serveur.")
 
-        /*
-          /grandmaitre classement
-          Affiche le classement mensuel.
-        */
+        // /grandmaitre classement - Affiche le classement mensuel.
         .addSubcommand(subcommand =>
             subcommand
                 .setName("classement")
@@ -876,10 +734,7 @@ const commands = [
                 )
         )
 
-        /*
-          /grandmaitre couronner
-          Donne le rôle Grand Maître au gagnant du mois.
-        */
+        // /grandmaitre couronner - Donne le rôle Grand Maître.
         .addSubcommand(subcommand =>
             subcommand
                 .setName("couronner")
@@ -902,10 +757,7 @@ const commands = [
                 )
         ),
 
-    /*
-      /profil
-      Affiche un résumé d’un membre.
-    */
+    // /profil - Affiche un résumé d’un membre.
     new SlashCommandBuilder()
         .setName("profil")
         .setDescription("Affiche le profil BDL d’un membre.")
@@ -922,28 +774,19 @@ const commands = [
                 .setRequired(false)
         ),
 
-    /*
-      /boutique
-      Boutique de points BDL.
-    */
+    // /boutique - Boutique de points BDL (NOUVEAUX OBJETS UNIQUEMENT).
     new SlashCommandBuilder()
         .setName("boutique")
         .setDescription("Boutique de points BDL.")
 
-        /*
-          /boutique voir
-          Affiche les objets disponibles dans la boutique.
-        */
+        // /boutique voir - Affiche les objets disponibles.
         .addSubcommand(subcommand =>
             subcommand
                 .setName("voir")
                 .setDescription("Affiche la boutique de points BDL.")
         )
 
-        /*
-          /boutique acheter
-          Crée une demande d'achat. Le staff valide ensuite.
-        */
+        // /boutique acheter - Crée une demande d'achat.
         .addSubcommand(subcommand =>
             subcommand
                 .setName("acheter")
@@ -955,28 +798,25 @@ const commands = [
                         .setRequired(true)
                         .addChoices(
                             // ===== NOUVEAUX OBJETS UNIQUEMENT =====
-                            { name: "Emoji personnalisé — 10 points", value: "emoji_personnalise" },
-                            { name: "Commande personnalisée — 20 points", value: "commande_personnalisee" },
-                            { name: "Boost d'XP — 5 points", value: "xp_boost" },
-                            { name: "Nude de colo (fausse) — 15 points", value: "nude_colo" },
-                            { name: "Trophée personnalisé — 30 points", value: "trophee_personnalise" },
-                            { name: "Thème de Gazette — 10 points", value: "theme_gazette" },
-                            { name: "Choisir le film — 8 points", value: "film_soiree" }
+                            { name: "Emoji personnalisé — 10 pts", value: "emoji_personnalise" },
+                            { name: "Commande personnalisée — 20 pts", value: "commande_personnalisee" },
+                            { name: "Boost d'XP — 5 pts", value: "xp_boost" },
+                            { name: "Nude de colo — 15 pts", value: "nude_colo" },
+                            { name: "Trophée personnalisé — 30 pts", value: "trophee_personnalise" },
+                            { name: "Thème de Gazette — 10 pts", value: "theme_gazette" },
+                            { name: "Choisir le film — 8 pts", value: "film_soiree" }
                         )
                 )
                 .addStringOption(option =>
                     option
                         .setName("note")
-                        .setDescription("Précision pour le staff : titre voulu, thème, idée, etc.")
+                        .setDescription("Précision pour le staff.")
                         .setRequired(false)
                         .setMaxLength(500)
                 )
         )
 
-        /*
-          /boutique demandes
-          Liste les demandes d'achat.
-        */
+        // /boutique demandes - Liste les demandes d'achat.
         .addSubcommand(subcommand =>
             subcommand
                 .setName("demandes")
@@ -994,10 +834,7 @@ const commands = [
                 )
         )
 
-        /*
-          /boutique approuver
-          Valide une demande et retire les points.
-        */
+        // /boutique approuver - Valide une demande.
         .addSubcommand(subcommand =>
             subcommand
                 .setName("approuver")
@@ -1010,10 +847,7 @@ const commands = [
                 )
         )
 
-        /*
-          /boutique refuser
-          Refuse une demande.
-        */
+        // /boutique refuser - Refuse une demande.
         .addSubcommand(subcommand =>
             subcommand
                 .setName("refuser")
@@ -1033,46 +867,31 @@ const commands = [
                 )
         ),
 
-    /*
-      /backup
-      Sauvegarde et infos de la base de données.
-    */
+    // /backup - Sauvegarde et infos de la base.
     new SlashCommandBuilder()
         .setName("backup")
         .setDescription("Gère les sauvegardes du bot BDL.")
 
-        /*
-          /backup export
-          Envoie le fichier SQLite au staff.
-        */
+        // /backup export - Exporte la base SQLite.
         .addSubcommand(subcommand =>
             subcommand
                 .setName("export")
                 .setDescription("Exporte la base de données SQLite du bot.")
         )
 
-        /*
-          /backup info
-          Affiche les statistiques de la base.
-        */
+        // /backup info - Affiche les statistiques.
         .addSubcommand(subcommand =>
             subcommand
                 .setName("info")
                 .setDescription("Affiche des informations sur la base de données.")
         ),
 
-    /*
-      /archive
-      Commandes de nettoyage de la base.
-    */
+    // /archive - Commandes de nettoyage.
     new SlashCommandBuilder()
         .setName("archive")
         .setDescription("Nettoie les anciennes données du bot BDL.")
 
-        /*
-          /archive old_drops
-          Supprime les vieux Drop Events terminés.
-        */
+        // /archive old_drops - Supprime les vieux Drop Events.
         .addSubcommand(subcommand =>
             subcommand
                 .setName("old_drops")
@@ -1093,10 +912,7 @@ const commands = [
                 )
         )
 
-        /*
-          /archive old_rumors
-          Supprime les vieilles rumeurs refusées.
-        */
+        // /archive old_rumors - Supprime les vieilles rumeurs refusées.
         .addSubcommand(subcommand =>
             subcommand
                 .setName("old_rumors")
@@ -1117,10 +933,7 @@ const commands = [
                 )
         )
 
-        /*
-          /archive old_mysteries
-          Supprime les anciennes parties Membre Mystère terminées.
-        */
+        // /archive old_mysteries - Supprime les anciennes parties Membre Mystère.
         .addSubcommand(subcommand =>
             subcommand
                 .setName("old_mysteries")
@@ -1141,10 +954,7 @@ const commands = [
                 )
         )
 
-        /*
-          /archive old_temp_roles
-          Supprime l’historique des anciens rôles temporaires déjà retirés.
-        */
+        // /archive old_temp_roles - Supprime l’historique des rôles temporaires.
         .addSubcommand(subcommand =>
             subcommand
                 .setName("old_temp_roles")
@@ -1165,10 +975,7 @@ const commands = [
                 )
         )
 
-        /*
-          /archive vacuum
-          Optimise la base SQLite après nettoyage.
-        */
+        // /archive vacuum - Optimise la base SQLite.
         .addSubcommand(subcommand =>
             subcommand
                 .setName("vacuum")
@@ -1181,10 +988,7 @@ const commands = [
                 )
         )
 
-        /*
-          /archive info
-          Explique les commandes d’archive.
-        */
+        // /archive info - Explique les commandes d’archive.
         .addSubcommand(subcommand =>
             subcommand
                 .setName("info")
@@ -1192,18 +996,10 @@ const commands = [
         )
 ].map(command => command.toJSON());
 
-/*
-  Crée un client REST Discord.
-  Il utilise le token du bot pour pouvoir envoyer les commandes slash à Discord.
-*/
+// Crée un client REST Discord.
 const rest = new REST({ version: "10" }).setToken(process.env.DISCORD_TOKEN);
 
-/*
-  Fonction principale de déploiement.
-
-  Elle envoie toutes les commandes du tableau commands au serveur Discord indiqué
-  par CLIENT_ID et GUILD_ID dans le fichier .env.
-*/
+// Fonction principale de déploiement.
 async function main() {
     try {
         console.log("🔄 Déploiement des commandes slash...");
