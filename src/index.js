@@ -153,7 +153,7 @@ function applyAttachmentImage(embed, attachment) {
     return embed.setImage(attachment.url);
 }
 
-// ===== BOUTIQUE =====
+// ===== BOUTIQUE (NOUVEAUX OBJETS UNIQUEMENT) =====
 const SHOP_ITEMS = {
     emoji_personnalise: {
         name: "Emoji personnalisé sur le serveur",
@@ -404,12 +404,12 @@ async function handleRumorButton(interaction) {
 
     const rumor = getRumorById({ guildId: interaction.guildId, rumorId });
     if (!rumor) {
-        await replyError(interaction, `Aucune rumeur trouvée avec l’ID #${rumorId}.`);
+        await replyError(interaction, `Rumeur #${rumorId} introuvable.`);
         return;
     }
 
     if (rumor.status !== "pending") {
-        await replyError(interaction, `Cette rumeur a déjà été traitée (statut : ${rumor.status}).`);
+        await replyError(interaction, `Cette rumeur a déjà été traitée (statut: ${rumor.status}).`);
         return;
     }
 
@@ -457,12 +457,12 @@ async function handleQuestSubmissionButton(interaction) {
 
     const submission = getQuestSubmissionById({ guildId: interaction.guildId, submissionId });
     if (!submission) {
-        await replyError(interaction, `Aucune validation trouvée avec l’ID #${submissionId}.`);
+        await replyError(interaction, `Validation #${submissionId} introuvable.`);
         return;
     }
 
     if (submission.status !== "pending") {
-        await replyError(interaction, `Cette validation a déjà été traitée (statut : ${submission.status}).`);
+        await replyError(interaction, `Cette validation a déjà été traitée (statut: ${submission.status}).`);
         return;
     }
 
@@ -631,12 +631,12 @@ async function handleShopPurchaseButton(interaction) {
 
     const purchase = getShopPurchaseById({ guildId: interaction.guildId, purchaseId });
     if (!purchase) {
-        await replyError(interaction, `Aucune demande boutique trouvée avec l’ID #${purchaseId}.`);
+        await replyError(interaction, `Demande #${purchaseId} introuvable.`);
         return;
     }
 
     if (purchase.status !== "pending") {
-        await replyError(interaction, `Cette demande a déjà été traitée (statut : ${purchase.status}).`);
+        await replyError(interaction, `Demande déjà traitée (statut: ${purchase.status}).`);
         return;
     }
 
@@ -649,10 +649,7 @@ async function handleShopPurchaseButton(interaction) {
 
     // Vérification spéciale pour le trophée (1 max par personne)
     if (action === "approve" && purchase.item_key === "trophee_personnalise") {
-        const existingPurchases = getShopPurchasesByStatus({
-            guildId: interaction.guildId,
-            status: "approved"
-        }) || []; // ⚠️ Gère le cas null
+        const existingPurchases = getShopPurchasesByStatus({ guildId: interaction.guildId, status: "approved" }) || [];
         const existingTrophees = existingPurchases.filter(p => p.user_id === purchase.user_id && p.item_key === "trophee_personnalise");
 
         if (existingTrophees.length >= 1) {
@@ -665,15 +662,10 @@ async function handleShopPurchaseButton(interaction) {
     }
 
     if (action === "approve") {
-        const total = getUserTotalPoints({
-            guildId: interaction.guildId,
-            userId: purchase.user_id,
-            includeSecret: false
-        });
-
+        const total = getUserTotalPoints({ guildId: interaction.guildId, userId: purchase.user_id, includeSecret: false });
         if (total < purchase.price) {
             await interaction.reply({
-                content: `❌ <@${purchase.user_id}> n’a pas assez de points publics.\nPrix : **${purchase.price}**, total actuel : **${total}**.`,
+                content: `<@${purchase.user_id}> n’a pas assez de points (prix: **${purchase.price}**, total: **${total}**).`,
                 flags: MessageFlags.Ephemeral
             });
             return;
@@ -795,7 +787,7 @@ async function publishMysteryHint(client, guildId, hintNumber) {
     }
 
     const channel = await guild.channels.fetch(mysteryChannelId).catch(() => null);
-    if (!channel || !channel.isTextBased()) {
+    if (!channel?.isTextBased()) {
         console.log("❌ Salon Membre Mystère introuvable ou invalide.");
         return;
     }
@@ -831,7 +823,7 @@ async function sendMysteryRevealReminder(client, guildId) {
     }
 
     const channel = await guild.channels.fetch(mysteryChannelId).catch(() => null);
-    if (!channel || !channel.isTextBased()) {
+    if (!channel?.isTextBased()) {
         console.log("❌ Salon Membre Mystère introuvable pour le rappel.");
         return;
     }
@@ -861,7 +853,7 @@ async function sendBumpReminder(client, guildId) {
     }
 
     const channel = await guild.channels.fetch(bumpChannelId).catch(() => null);
-    if (!channel || !channel.isTextBased()) {
+    if (!channel?.isTextBased()) {
         console.log("❌ Salon bump introuvable ou invalide.");
         return;
     }
@@ -1107,7 +1099,7 @@ async function handleCommandInteraction(interaction) {
                             { name: "Cible", value: cible ? `${cible}` : "Aucune", inline: false },
                             { name: "Statut", value: "En attente", inline: true }
                         )
-                        .setFooter({ text: "Clique sur un bouton ou utilise /rumeur approuver/refuser." })
+                        .setFooter({ text: "Clique sur un bouton ou utilise /rumeur approuver/refuser" })
                         .setTimestamp();
                     await staffChannel.send({ embeds: [embed], components: [createRumorButtons(rumorId)] });
                 }
@@ -1182,7 +1174,7 @@ async function handleCommandInteraction(interaction) {
         }
     }
 
-    // ===== GAZETTE =====
+    // ===== GAZETTE (AVEC IMAGES MULTIPLES) =====
     if (interaction.commandName === "gazette") {
         const subcommand = interaction.options.getSubcommand();
 
@@ -1218,150 +1210,151 @@ async function handleCommandInteraction(interaction) {
             return;
         }
 
-       // /gazette publier
-if (subcommand === "publier") {
-    if (!isStaff(interaction.member)) {
-        await replyError(interaction, "Seul le staff peut publier la Gazette.");
-        return;
-    }
+        // /gazette publier (AVEC GESTION DES IMAGES MULTIPLES)
+        if (subcommand === "publier") {
+            if (!isStaff(interaction.member)) {
+                await replyError(interaction, "Seul le staff peut publier la Gazette.");
+                return;
+            }
 
-    // === RÉCUPÉRATION DES DONNÉES ===
-    const titre = interaction.options.getString("titre");
-    const pepites = formatMultilineInput(interaction.options.getString("pepites"));
-    const stats = formatMultilineInput(interaction.options.getString("stats"));
-    const rumeur = formatMultilineInput(interaction.options.getString("rumeur"));
-    const exploit = formatMultilineInput(interaction.options.getString("exploit"));
-    const nominations = formatMultilineInput(interaction.options.getString("nominations") || "");
+            // Récupération des textes
+            const titre = interaction.options.getString("titre");
+            const pepites = formatMultilineInput(interaction.options.getString("pepites"));
+            const stats = formatMultilineInput(interaction.options.getString("stats"));
+            const rumeur = formatMultilineInput(interaction.options.getString("rumeur"));
+            const exploit = formatMultilineInput(interaction.options.getString("exploit"));
+            const nominations = formatMultilineInput(interaction.options.getString("nominations") || "");
 
-    // === RÉCUPÉRATION DES IMAGES ===
-    const banniere = interaction.options.getAttachment("banniere");
-    const imagePepites = interaction.options.getAttachment("image_pepites");
-    const imageStats = interaction.options.getAttachment("image_stats");
-    const imageRumeur = interaction.options.getAttachment("image_rumeur");
-    const imageExploit = interaction.options.getAttachment("image_exploit");
-    const imageNominations = interaction.options.getAttachment("image_nominations");
+            // Récupération des images (NOUVEAU)
+            const banniere = interaction.options.getAttachment("banniere");
+            const imagePepites = interaction.options.getAttachment("image_pepites");
+            const imageStats = interaction.options.getAttachment("image_stats");
+            const imageRumeur = interaction.options.getAttachment("image_rumeur");
+            const imageExploit = interaction.options.getAttachment("image_exploit");
+            const imageNominations = interaction.options.getAttachment("image_nominations");
 
-    // === VÉRIFIER LE SALON GAZETTE ===
-    const gazetteChannelId = getSetting({ guildId: interaction.guildId, key: "gazette_channel_id" });
-    if (!gazetteChannelId) {
-        await replyError(interaction, "Aucun salon Gazette configuré. Utilise `/config salon`.");
-        return;
-    }
+            // Vérification du salon Gazette
+            const gazetteChannelId = getSetting({ guildId: interaction.guildId, key: "gazette_channel_id" });
+            if (!gazetteChannelId) {
+                await replyError(interaction, "Aucun salon Gazette configuré. Utilise `/config salon`.");
+                return;
+            }
 
-    const channel = await interaction.guild.channels.fetch(gazetteChannelId).catch(() => null);
-    if (!channel?.isTextBased()) {
-        await replyError(interaction, "Salon Gazette introuvable.");
-        return;
-    }
+            const channel = await interaction.guild.channels.fetch(gazetteChannelId).catch(() => null);
+            if (!channel?.isTextBased()) {
+                await replyError(interaction, "Salon Gazette introuvable.");
+                return;
+            }
 
-    // === PRÉPARATION DES EMBEDS ===
-    const embeds = [];
-    const leaderboard = getLeaderboard({ guildId: interaction.guildId, includeSecret: false, limit: 3 });
-    const topMember = leaderboard[0] || { user_id: "Aucun", total: 0 };
-    const pointsBannerUrl = getPointsBannerUrl(topMember.total);
+            // Préparation des embeds (NOUVEAU: un embed par image)
+            const embeds = [];
+            const leaderboard = getLeaderboard({ guildId: interaction.guildId, includeSecret: false, limit: 3 });
+            const topMember = leaderboard[0] || { user_id: "Aucun", total: 0 };
+            const pointsBannerUrl = getPointsBannerUrl(topMember.total);
 
-    // === EMBED PRINCIPAL (BANNIÈRE) ===
-    const mainEmbed = new EmbedBuilder()
-        .setTitle(`📰 **${titre}**`)
-        .setDescription(
-            `**Édition du ${new Date().toLocaleDateString("fr-FR", {
-                weekday: "long",
-                year: "numeric",
-                month: "long",
-                day: "numeric"
-            })}**\n` +
-            `*La Gazette Royale qui délie les langues et lie les cœurs.*`
-        )
-        .setColor(0x9b59b6)
-        .setImage(banniere ? banniere.url : pointsBannerUrl)
-        .setFooter({ text: "Une édition signée BDL Bot" })
-        .setTimestamp();
-
-    // === EMBED PÉPITES (si image fournie) ===
-    if (imagePepites) {
-        embeds.push(
-            new EmbedBuilder()
-                .setTitle("💎 **Pépites de la semaine**")
-                .setDescription(pepites)
-                .setImage(imagePepites.url)
-                .setColor(0xf1c40f)
-        );
-    } else if (pepites) {
-        mainEmbed.addFields({ name: "💎 Pépites de la semaine", value: pepites, inline: false });
-    }
-
-    // === EMBED STATS (si image fournie) ===
-    if (imageStats) {
-        embeds.push(
-            new EmbedBuilder()
-                .setTitle("📊 **Statistiques absurdes**")
-                .setDescription(stats)
-                .setImage(imageStats.url)
-                .setColor(0x3498db)
-        );
-    } else if (stats) {
-        mainEmbed.addFields({ name: "📊 Statistiques absurdes", value: stats, inline: false });
-    }
-
-    // === EMBED RUMEUR (si image fournie) ===
-    if (imageRumeur) {
-        embeds.push(
-            new EmbedBuilder()
-                .setTitle("🗞️ **Rumeur de la semaine**")
-                .setDescription(rumeur)
-                .setImage(imageRumeur.url)
-                .setColor(0xe74c3c)
-        );
-    } else if (rumeur) {
-        mainEmbed.addFields({ name: "🗞️ Rumeur de la semaine", value: rumeur, inline: false });
-    }
-
-    // === EMBED EXPLOIT (si image fournie) ===
-    if (imageExploit) {
-        embeds.push(
-            new EmbedBuilder()
-                .setTitle("🏆 **Exploit de la semaine**")
-                .setDescription(exploit)
-                .setImage(imageExploit.url)
-                .setColor(0x2ecc71)
-        );
-    } else if (exploit) {
-        mainEmbed.addFields({ name: "🏆 Exploit de la semaine", value: exploit, inline: false });
-    }
-
-    // === EMBED NOMINATIONS (si image fournie) ===
-    if (imageNominations) {
-        embeds.push(
-            new EmbedBuilder()
-                .setTitle("🎖️ **Nominations**")
-                .setDescription(nominations)
-                .setImage(imageNominations.url)
+            // Embed principal (bannière + classement)
+            const mainEmbed = new EmbedBuilder()
+                .setTitle(`📰 **${titre}**`)
+                .setDescription(
+                    `**Édition du ${new Date().toLocaleDateString("fr-FR", {
+                        weekday: "long",
+                        year: "numeric",
+                        month: "long",
+                        day: "numeric"
+                    })}**\n` +
+                    `*La Gazette Royale qui délie les langues et lie les cœurs.*`
+                )
                 .setColor(0x9b59b6)
-        );
-    } else if (nominations) {
-        mainEmbed.addFields({ name: "🎖️ Nominations", value: nominations, inline: false });
+                .setImage(banniere ? banniere.url : pointsBannerUrl)
+                .setFooter({ text: "Une édition signée BDL Bot" })
+                .setTimestamp();
+
+            // Embed Pépites (si image fournie)
+            if (imagePepites) {
+                embeds.push(
+                    new EmbedBuilder()
+                        .setTitle("💎 **Pépites de la semaine**")
+                        .setDescription(pepites)
+                        .setImage(imagePepites.url)
+                        .setColor(0xf1c40f)
+                );
+            } else if (pepites) {
+                mainEmbed.addFields({ name: "💎 Pépites de la semaine", value: pepites, inline: false });
+            }
+
+            // Embed Stats (si image fournie)
+            if (imageStats) {
+                embeds.push(
+                    new EmbedBuilder()
+                        .setTitle("📊 **Statistiques absurdes**")
+                        .setDescription(stats)
+                        .setImage(imageStats.url)
+                        .setColor(0x3498db)
+                );
+            } else if (stats) {
+                mainEmbed.addFields({ name: "📊 Statistiques absurdes", value: stats, inline: false });
+            }
+
+            // Embed Rumeur (si image fournie)
+            if (imageRumeur) {
+                embeds.push(
+                    new EmbedBuilder()
+                        .setTitle("🗞️ **Rumeur de la semaine**")
+                        .setDescription(rumeur)
+                        .setImage(imageRumeur.url)
+                        .setColor(0xe74c3c)
+                );
+            } else if (rumeur) {
+                mainEmbed.addFields({ name: "🗞️ Rumeur de la semaine", value: rumeur, inline: false });
+            }
+
+            // Embed Exploit (si image fournie)
+            if (imageExploit) {
+                embeds.push(
+                    new EmbedBuilder()
+                        .setTitle("🏆 **Exploit de la semaine**")
+                        .setDescription(exploit)
+                        .setImage(imageExploit.url)
+                        .setColor(0x2ecc71)
+                );
+            } else if (exploit) {
+                mainEmbed.addFields({ name: "🏆 Exploit de la semaine", value: exploit, inline: false });
+            }
+
+            // Embed Nominations (si image fournie)
+            if (imageNominations) {
+                embeds.push(
+                    new EmbedBuilder()
+                        .setTitle("🎖️ **Nominations**")
+                        .setDescription(nominations)
+                        .setImage(imageNominations.url)
+                        .setColor(0x9b59b6)
+                );
+            } else if (nominations) {
+                mainEmbed.addFields({ name: "🎖️ Nominations", value: nominations, inline: false });
+            }
+
+            // Ajout du classement au mainEmbed
+            if (leaderboard.length > 0) {
+                mainEmbed.addFields({
+                    name: "👑 Classement Points BDL",
+                    value: leaderboard.map((r, i) => `**${i + 1}.** <@${r.user_id}> — **${r.total} points**`).join("\n"),
+                    inline: true
+                });
+            }
+
+            // Ajout du mainEmbed au tableau
+            embeds.push(mainEmbed);
+
+            // Envoi du message avec tous les embeds
+            await channel.send({ embeds: embeds });
+            await interaction.reply({
+                content: `✅ Gazette publiée dans ${channel} avec **${embeds.length} embed(s)** !`,
+                flags: MessageFlags.Ephemeral
+            });
+            return;
+        }
     }
-
-    // === CLASSMENT (toujours dans le mainEmbed) ===
-    if (leaderboard.length > 0) {
-        mainEmbed.addFields({
-            name: "👑 Classement Points BDL",
-            value: leaderboard.map((r, i) => `**${i + 1}.** <@${r.user_id}> — **${r.total} points**`).join("\n"),
-            inline: true
-        });
-    }
-
-    // === AJOUT DU MAIN EMBED À LA FIN ===
-    embeds.push(mainEmbed);
-
-    // === ENVOI DU MESSAGE ===
-    await channel.send({ embeds: embeds });
-    await interaction.reply({
-        content: `✅ Gazette publiée dans ${channel} avec **${embeds.length} embed(s)** !`,
-        flags: MessageFlags.Ephemeral
-    });
-    return;
-}
 
     // ===== CONFIG =====
     if (interaction.commandName === "config") {
@@ -1985,6 +1978,7 @@ if (subcommand === "publier") {
                 await replyError(interaction, `Tu n’as pas assez de points (prix: **${item.price}**, ton total: **${userTotal}**).`);
                 return;
             }
+            // Vérification pour le trophée (1 max par personne)
             if (itemKey === "trophee_personnalise") {
                 const existingPurchases = getShopPurchasesByStatus({ guildId: interaction.guildId, status: "approved" }) || [];
                 if (existingPurchases.some(p => p.user_id === interaction.user.id && p.item_key === "trophee_personnalise")) {
@@ -2056,6 +2050,7 @@ if (subcommand === "publier") {
                 await replyError(interaction, `Demande déjà traitée (statut: ${purchase.status}).`);
                 return;
             }
+            // Vérification pour le trophée
             if (purchase.item_key === "trophee_personnalise") {
                 const existingPurchases = getShopPurchasesByStatus({ guildId: interaction.guildId, status: "approved" }) || [];
                 if (existingPurchases.some(p => p.user_id === purchase.user_id && p.item_key === "trophee_personnalise")) {
