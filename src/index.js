@@ -2195,8 +2195,7 @@ content: `⚠️ **Attention** : Cette commande supprimera les Drop Events **ter
             const jours = interaction.options.getInteger("jours") ?? 30;
             if (!confirmer) {
                 await interaction.reply({
-                    content: `⚠️ **Attention** : Supprimera les rumeurs **refusées depuis +${jours} jours**.\\nUtilise \\`/archive old_rumors confirmer:true jours:${jours}\\`.`,
-                    flags: MessageFlags.Ephemeral
+content: `⚠️ **Attention** : Supprimera les rumeurs **refusées depuis +${jours} jours**.\n\nUtilise \`/archive old_rumors confirmer:true jours:${jours}\`.`,                    flags: MessageFlags.Ephemeral
                 });
                 return;
             }
@@ -2213,8 +2212,7 @@ content: `⚠️ **Attention** : Cette commande supprimera les Drop Events **ter
             const jours = interaction.options.getInteger("jours") ?? 30;
             if (!confirmer) {
                 await interaction.reply({
-                    content: `⚠️ **Attention** : Supprimera les parties **terminées depuis +${jours} jours**.\\nUtilise \\`/archive old_mysteries confirmer:true jours:${jours}\\`.`,
-                    flags: MessageFlags.Ephemeral
+content: `⚠️ **Attention** : Supprimera les parties **terminées depuis +${jours} jours**.\n\nUtilise \`/archive old_mysteries confirmer:true jours:${jours}\`.`,                    flags: MessageFlags.Ephemeral
                 });
                 return;
             }
@@ -2234,8 +2232,7 @@ content: `⚠️ **Attention** : Cette commande supprimera les Drop Events **ter
             const jours = interaction.options.getInteger("jours") ?? 30;
             if (!confirmer) {
                 await interaction.reply({
-                    content: `⚠️ **Attention** : Supprimera les rôles **retirés depuis +${jours} jours**.\\nUtilise \\`/archive old_temp_roles confirmer:true jours:${jours}\\`.`,
-                    flags: MessageFlags.Ephemeral
+content: `⚠️ **Attention** : Supprimera les rôles **retirés depuis +${jours} jours**.\n\nUtilise \`/archive old_temp_roles confirmer:true jours:${jours}\`.`,                    flags: MessageFlags.Ephemeral
                 });
                 return;
             }
