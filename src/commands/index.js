@@ -1219,57 +1219,125 @@ async function handleCommandInteraction(interaction) {
         }
 
         // /gazette publier
-        if (subcommand === "publier") {
-            if (!isStaff(interaction.member)) {
-                await replyError(interaction, "Seul le staff peut publier la Gazette.");
-                return;
-            }
-            const titre = interaction.options.getString("titre");
-            const pepites = formatMultilineInput(interaction.options.getString("pepites"));
-            const stats = formatMultilineInput(interaction.options.getString("stats"));
-            const rumeur = formatMultilineInput(interaction.options.getString("rumeur"));
-            const exploit = formatMultilineInput(interaction.options.getString("exploit"));
-            const nominations = formatMultilineInput(interaction.options.getString("nominations") || "");
-            const banniere = interaction.options.getAttachment("banniere");
+if (subcommand === "publier") {
+    if (!isStaff(interaction.member)) {
+        await replyError(interaction, "Seul le staff peut publier la Gazette.");
+        return;
+    }
+    const titre = interaction.options.getString("titre");
+    const pepites = formatMultilineInput(interaction.options.getString("pepites"));
+    const stats = formatMultilineInput(interaction.options.getString("stats"));
+    const rumeur = formatMultilineInput(interaction.options.getString("rumeur"));
+    const exploit = formatMultilineInput(interaction.options.getString("exploit"));
+    const nominations = formatMultilineInput(interaction.options.getString("nominations") || "");
+    const banniere = interaction.options.getAttachment("banniere");
 
-            const gazetteChannelId = getSetting({ guildId: interaction.guildId, key: "gazette_channel_id" });
-            if (!gazetteChannelId) {
-                await replyError(interaction, "Aucun salon Gazette configuré. Utilise `/config salon`.");
-                return;
-            }
-
-            const channel = await interaction.guild.channels.fetch(gazetteChannelId).catch(() => null);
-            if (!channel?.isTextBased()) {
-                await replyError(interaction, "Salon Gazette introuvable.");
-                return;
-            }
-
-            const leaderboard = getLeaderboard({ guildId: interaction.guildId, includeSecret: false, limit: 3 });
-            const topMember = leaderboard[0] || { user_id: "Aucun", total: 0 };
-            const pointsBannerUrl = getPointsBannerUrl(topMember.total);
-
-            const embed = new EmbedBuilder()
-                .setTitle(`📰 **${titre}**`)
-                .setDescription(`**Édition du ${new Date().toLocaleDateString("fr-FR", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}**\n*La Gazette Royale qui délie les langues et lie les cœurs.*`)
-                .setColor(0x9b59b6)
-                .setImage(banniere ? banniere.url : pointsBannerUrl)
-                .addFields(
-                    { name: "💎 Pépites de la semaine", value: pepites || "Aucune", inline: false },
-                    { name: "📊 Statistiques absurdes", value: stats || "Aucune", inline: false },
-                    { name: "🗞️ Rumeur de la semaine", value: rumeur || "Aucune", inline: false },
-                    { name: "🏆 Exploit de la semaine", value: exploit || "Aucun", inline: false },
-                    { name: "👑 Classement Points BDL", value: leaderboard.length > 0 ? leaderboard.map((r, i) => `**${i + 1}.** <@${r.user_id}> — **${r.total} points**`).join("\n") : "Aucun", inline: true },
-                    { name: "🎖️ Nominations", value: nominations || "Aucune", inline: true }
-                )
-                .setFooter({ text: "Une édition signée BDL Bot | /gazette brouillon pour un modèle" })
-                .setTimestamp();
-
-            await channel.send({ embeds: [embed] });
-            await interaction.reply({ content: `✅ Gazette publiée dans ${channel} !`, flags: MessageFlags.Ephemeral });
-            return;
-        }
+    const gazetteChannelId = getSetting({ guildId: interaction.guildId, key: "gazette_channel_id" });
+    if (!gazetteChannelId) {
+        await replyError(interaction, "Aucun salon Gazette configuré. Utilise `/config salon`.");
+        return;
     }
 
+    const channel = await interaction.guild.channels.fetch(gazetteChannelId).catch(() => null);
+    if (!channel?.isTextBased()) {
+        await replyError(interaction, "Salon Gazette introuvable.");
+        return;
+    }
+
+    const leaderboard = getLeaderboard({ guildId: interaction.guildId, includeSecret: false, limit: 3 });
+    const pointsBannerUrl = getPointsBannerUrl(leaderboard[0]?.total || 0);
+
+    // ⬇️ NOUVEAU : Tableau d'embeds
+    const embeds = [];
+
+    // 1️⃣ Premier embed : Titre + bannière principale
+    const mainEmbed = new EmbedBuilder()
+        .setTitle(`📰 **${titre}**`)
+        .setDescription(
+            `**Édition du ${new Date().toLocaleDateString("fr-FR", {
+                weekday: "long",
+                year: "numeric",
+                month: "long",
+                day: "numeric"
+            })}**\n*La Gazette Royale qui délie les langues et lie les cœurs.*`
+        )
+        .setColor(0x9b59b6)
+        .setImage(banniere ? banniere.url : pointsBannerUrl)
+        .setFooter({ text: "Une édition signée BDL Bot | /gazette brouillon pour un modèle" })
+        .setTimestamp();
+    embeds.push(mainEmbed);
+
+    // 2️⃣ Embed Pépites (avec image dédiée)
+    if (pepites) {
+        const pepitesEmbed = new EmbedBuilder()
+            .setTitle("💎 Pépites de la semaine")
+            .setDescription(pepites)
+            .setColor(0x9b59b6);
+        const imagePepites = interaction.options.getAttachment("image_pepites");
+        if (imagePepites) pepitesEmbed.setImage(imagePepites.url);
+        embeds.push(pepitesEmbed);
+    }
+
+    // 3️⃣ Embed Stats (avec image dédiée)
+    if (stats) {
+        const statsEmbed = new EmbedBuilder()
+            .setTitle("📊 Statistiques absurdes")
+            .setDescription(stats)
+            .setColor(0x9b59b6);
+        const imageStats = interaction.options.getAttachment("image_stats");
+        if (imageStats) statsEmbed.setImage(imageStats.url);
+        embeds.push(statsEmbed);
+    }
+
+    // 4️⃣ Embed Rumeur (avec image dédiée)
+    if (rumeur) {
+        const rumeurEmbed = new EmbedBuilder()
+            .setTitle("🗞️ Rumeur de la semaine")
+            .setDescription(rumeur)
+            .setColor(0x9b59b6);
+        const imageRumeur = interaction.options.getAttachment("image_rumeur");
+        if (imageRumeur) rumeurEmbed.setImage(imageRumeur.url);
+        embeds.push(rumeurEmbed);
+    }
+
+    // 5️⃣ Embed Exploit (avec image dédiée)
+    if (exploit) {
+        const exploitEmbed = new EmbedBuilder()
+            .setTitle("🏆 Exploit de la semaine")
+            .setDescription(exploit)
+            .setColor(0x9b59b6);
+        const imageExploit = interaction.options.getAttachment("image_exploit");
+        if (imageExploit) exploitEmbed.setImage(imageExploit.url);
+        embeds.push(exploitEmbed);
+    }
+
+    // 6️⃣ Embed Nominations (avec image dédiée)
+    if (nominations) {
+        const nominationsEmbed = new EmbedBuilder()
+            .setTitle("🎖️ Nominations")
+            .setDescription(nominations)
+            .setColor(0x9b59b6);
+        const imageNominations = interaction.options.getAttachment("image_nominations");
+        if (imageNominations) nominationsEmbed.setImage(imageNominations.url);
+        embeds.push(nominationsEmbed);
+    }
+
+    // 7️⃣ Embed Classement (sans image)
+    const classementEmbed = new EmbedBuilder()
+        .setTitle("👑 Classement Points BDL")
+        .setDescription(
+            leaderboard.length > 0
+                ? leaderboard.map((r, i) => `**${i + 1}.** <@${r.user_id}> — **${r.total} points**`).join("\n")
+                : "Aucun"
+        )
+        .setColor(0x9b59b6);
+    embeds.push(classementEmbed);
+
+    // Envoi de tous les embeds
+    await channel.send({ embeds: embeds });
+    await interaction.reply({ content: `✅ Gazette publiée dans ${channel} !`, flags: MessageFlags.Ephemeral });
+    return;
+}
     // ===== CONFIG =====
     if (interaction.commandName === "config") {
         const subcommand = interaction.options.getSubcommand();
@@ -1380,34 +1448,51 @@ async function handleCommandInteraction(interaction) {
         }
 
         if (subcommand === "valider") {
-            const questId = interaction.options.getInteger("id");
-            const preuve = formatMultilineInput(interaction.options.getString("preuve"));
-            const photo = interaction.options.getAttachment("photo");
-            const membreMentionne = interaction.options.getUser("membre_mentionne");
-            const lien = interaction.options.getString("lien") ?? null;
+    const questId = interaction.options.getInteger("id");
+    const preuve = formatMultilineInput(interaction.options.getString("preuve"));
+    const photo = interaction.options.getAttachment("photo");
+    const membreMentionne = interaction.options.getUser("membre_mentionne");
+    const lien = interaction.options.getString("lien") ?? null;
 
-            const quest = getQuestById({ guildId: interaction.guildId, questId });
-            if (!quest) {
-                await replyError(interaction, `Quête #${questId} introuvable.`);
-                return;
-            }
-            if (quest.status !== "active") {
-                await replyError(interaction, `La quête **${quest.title}** n’est plus active.`);
-                return;
-            }
+    const quest = getQuestById({ guildId: interaction.guildId, questId });
+    if (!quest) {
+        await replyError(interaction, `Quête #${questId} introuvable.`);
+        return;
+    }
+    if (quest.status !== "active") {
+        await replyError(interaction, `La quête **${quest.title}** n’est plus active.`);
+        return;
+    }
 
-            try {
-                addQuestSubmission({
-                    guildId: interaction.guildId,
-                    questId,
-                    userId: interaction.user.id,
-                    proof: preuve,
-                    proofImageUrl: photo?.url,
-                    mentionedUserId: membreMentionne?.id,
-                    proofLink: lien
-                });
+    try {
+        addQuestSubmission({
+            guildId: interaction.guildId,
+            questId,
+            userId: interaction.user.id,
+            proof: preuve,
+            proofImageUrl: photo?.url,
+            mentionedUserId: membreMentionne?.id,
+            proofLink: lien
+        });
 
-                const staffChannelId = getSetting({ guildId: interaction.guildId, key: "rumors_staff_channel_id" });
+        // ⬇️ Récupère la dernière soumission de l'utilisateur pour cette quête
+        const allSubmissions = getQuestSubmissionsByStatus({
+            guildId: interaction.guildId,
+            status: "pending",
+            limit: 50
+        }) || [];
+
+        const submission = allSubmissions
+            .filter(s => s.user_id === interaction.user.id && s.quest_id === questId)
+            .sort((a, b) => b.id - a.id)[0]; // Dernière soumission
+
+        if (!submission) {
+            await replyError(interaction, "Impossible de récupérer l'ID de la soumission.");
+            return;
+        }
+
+        // ⬇️ Envoi automatique au salon staff (comme pour les rumeurs)
+        const staffChannelId = getSetting({ guildId: interaction.guildId, key: "rumors_staff_channel_id" });
         if (staffChannelId) {
             const staffChannel = await interaction.guild.channels.fetch(staffChannelId).catch(() => null);
             if (staffChannel?.isTextBased()) {
@@ -1415,7 +1500,7 @@ async function handleCommandInteraction(interaction) {
                     .setTitle("🗺️ Nouvelle validation de quête")
                     .setDescription(truncate(preuve, 1000))
                     .addFields(
-                        { name: "ID", value: `#${submissionId}`, inline: true },
+                        { name: "ID", value: `#${submission.id}`, inline: true },
                         { name: "Quête", value: `**${quest.title}** (ID: #${questId})`, inline: false },
                         { name: "Auteur", value: `${interaction.user}`, inline: true },
                         { name: "Membre mentionné", value: membreMentionne ? `${membreMentionne}` : "Aucun", inline: true },
@@ -1425,21 +1510,25 @@ async function handleCommandInteraction(interaction) {
                     .setFooter({ text: "Clique sur un bouton ou utilise /quete approuver/refuser" })
                     .setTimestamp();
 
-                applyAttachmentImage(embed, photo);
+                if (photo) embed.setImage(photo.url);
 
                 await staffChannel.send({
                     embeds: [embed],
-                    components: [createQuestSubmissionButtons(submissionId)]
-                });
+                    components: [createQuestSubmissionButtons(submission.id)]
+                }).catch(console.error);
             }
         }
-                
-                await interaction.reply({ content: `✅ Ta validation pour **${quest.title}** a été envoyée au staff !`, flags: MessageFlags.Ephemeral });
-            } catch (error) {
-                await replyError(interaction, "Tu as déjà soumis une validation pour cette quête.");
-            }
-            return;
-        }
+
+        await interaction.reply({
+            content: `✅ Ta validation pour **${quest.title}** a été envoyée au staff ! (ID: #${submission.id})`,
+            flags: MessageFlags.Ephemeral
+        });
+    } catch (error) {
+        await replyError(interaction, "Tu as déjà soumis une validation pour cette quête.");
+    }
+    return;
+}
+
 
         if (subcommand === "submissions") {
             if (!isStaff(interaction.member)) {
