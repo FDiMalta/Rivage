@@ -2152,3 +2152,181 @@ async function handleCommandInteraction(interaction) {
                     { name: "⚙️ Paramètres", value: `${stats.settings}`, inline: true },
                     { name: "💾 Taille base", value: formatFileSize(dbSize), inline: false },
                     { name: "🔄 Rôles actifs", value: `${getActiveTemporaryRoleCount()}`, inline: true },
+
+
+
+            // ===== ARCHIVE =====
+    if (interaction.commandName === "archive") {
+        const subcommand = interaction.options.getSubcommand();
+        if (subcommand === "old_drops") {
+            if (!isStaff(interaction.member)) {
+                await replyError(interaction, "Seul le staff peut nettoyer les données.");
+                return;
+            }
+            const confirmer = interaction.options.getBoolean("confirmer");
+            const jours = interaction.options.getInteger("jours") ?? 30;
+            if (!confirmer) {
+                await interaction.reply({
+                    content: `⚠️ **Attention** : Cette commande supprimera les Drop Events **terminés depuis +${jours} jours**.\\nUtilise \\`/archive old_drops confirmer:true jours:${jours}\\`.`,
+                    flags: MessageFlags.Ephemeral
+                });
+                return;
+            }
+            const result = deleteOldDropEvents({ beforeDate: getCleanupDate(jours) });
+            await interaction.reply({
+                content: `🗑️ **${result.events} Drop Events** et **${result.participants} participants** supprimés.`,
+                flags: MessageFlags.Ephemeral
+            });
+            return;
+        }
+        if (subcommand === "old_rumors") {
+            if (!isStaff(interaction.member)) {
+                await replyError(interaction, "Seul le staff peut nettoyer les données.");
+                return;
+            }
+            const confirmer = interaction.options.getBoolean("confirmer");
+            const jours = interaction.options.getInteger("jours") ?? 30;
+            if (!confirmer) {
+                await interaction.reply({
+                    content: `⚠️ **Attention** : Supprimera les rumeurs **refusées depuis +${jours} jours**.\\nUtilise \\`/archive old_rumors confirmer:true jours:${jours}\\`.`,
+                    flags: MessageFlags.Ephemeral
+                });
+                return;
+            }
+            const result = deleteOldRejectedRumors({ beforeDate: getCleanupDate(jours) });
+            await interaction.reply({ content: `🗑️ **${result.rumors} rumeurs** supprimées.`, flags: MessageFlags.Ephemeral });
+            return;
+        }
+        if (subcommand === "old_mysteries") {
+            if (!isStaff(interaction.member)) {
+                await replyError(interaction, "Seul le staff peut nettoyer les données.");
+                return;
+            }
+            const confirmer = interaction.options.getBoolean("confirmer");
+            const jours = interaction.options.getInteger("jours") ?? 30;
+            if (!confirmer) {
+                await interaction.reply({
+                    content: `⚠️ **Attention** : Supprimera les parties **terminées depuis +${jours} jours**.\\nUtilise \\`/archive old_mysteries confirmer:true jours:${jours}\\`.`,
+                    flags: MessageFlags.Ephemeral
+                });
+                return;
+            }
+            const result = deleteOldMysteryGames({ beforeDate: getCleanupDate(jours) });
+            await interaction.reply({
+                content: `🗑️ **${result.games} parties**, **${result.hints} indices** et **${result.guesses} réponses** supprimés.`,
+                flags: MessageFlags.Ephemeral
+            });
+            return;
+        }
+        if (subcommand === "old_temp_roles") {
+            if (!isStaff(interaction.member)) {
+                await replyError(interaction, "Seul le staff peut nettoyer les données.");
+                return;
+            }
+            const confirmer = interaction.options.getBoolean("confirmer");
+            const jours = interaction.options.getInteger("jours") ?? 30;
+            if (!confirmer) {
+                await interaction.reply({
+                    content: `⚠️ **Attention** : Supprimera les rôles **retirés depuis +${jours} jours**.\\nUtilise \\`/archive old_temp_roles confirmer:true jours:${jours}\\`.`,
+                    flags: MessageFlags.Ephemeral
+                });
+                return;
+            }
+            const result = deleteOldRemovedTemporaryRoles({ beforeDate: getCleanupDate(jours) });
+            await interaction.reply({ content: `🗑️ **${result.temporaryRoles} rôles** supprimés.`, flags: MessageFlags.Ephemeral });
+            return;
+        }
+        if (subcommand === "vacuum") {
+            if (!isStaff(interaction.member)) {
+                await replyError(interaction, "Seul le staff peut optimiser la base.");
+                return;
+            }
+            const confirmer = interaction.options.getBoolean("confirmer");
+            if (!confirmer) {
+                await interaction.reply({
+                    content: "⚠️ **Attention** : Optimise le fichier SQLite.\\nUtilise `/archive vacuum confirmer:true`.",
+                    flags: MessageFlags.Ephemeral
+                });
+                return;
+            }
+            vacuumDatabase();
+            await interaction.reply({ content: "✅ Base de données optimisée (VACUUM).", flags: MessageFlags.Ephemeral });
+            return;
+        }
+        if (subcommand === "info") {
+            await interaction.reply({
+                content:
+                    `🗑️ **Commandes d’archive**\\n\\n` +
+                    `Nettoie les anciennes données pour éviter que la base ne devienne trop grosse.\\n\\n` +
+                    `**Disponibles :**\\n` +
+                    `- /archive old_drops : Supprime les Drop Events terminés\\n` +
+                    `- /archive old_rumors : Supprime les rumeurs refusées\\n` +
+                    `- /archive old_mysteries : Supprime les parties Membre Mystère terminées\\n` +
+                    `- /archive old_temp_roles : Supprime l’historique des rôles temporaires\\n` +
+                    `- /archive vacuum : Optimise le fichier SQLite\\n\\n` +
+                    `⚠️ **Toutes ces commandes nécessitent **confirmer:true** et sont réservées au staff.`,
+                flags: MessageFlags.Ephemeral
+            });
+            return;
+        }
+    }
+}
+
+/* =========================
+   ÉCOUTEURS D'ÉVÉNEMENTS
+========================= */
+
+client.once(Events.ClientReady, (c) => {
+    console.log(`✅ Bot connecté en tant que ${c.user.tag} (ID: ${c.user.id})`);
+
+    // Nettoyage initial des rôles expirés
+    cleanupExpiredTemporaryRoles(c).catch(console.error);
+
+    // Tâches planifiées
+    cron.schedule("*/10 * * * *", () => cleanupExpiredTemporaryRoles(c).catch(console.error));
+    cron.schedule("0 18 * * 3,5", () => { // Mercredi et vendredi à 18h
+        c.guilds.cache.forEach(g => publishMysteryHint(c, g.id, 1).catch(console.error));
+    });
+    cron.schedule("0 19 * * 3,5", () => { // Mercredi et vendredi à 19h
+        c.guilds.cache.forEach(g => publishMysteryHint(c, g.id, 2).catch(console.error));
+    });
+    cron.schedule("0 20 * * 6", () => { // Samedi à 20h
+        c.guilds.cache.forEach(g => sendMysteryRevealReminder(c, g.id).catch(console.error));
+    });
+    cron.schedule("0 * * * *", () => { // Toutes les heures
+        c.guilds.cache.forEach(g => checkScheduledBumpReminder(c, g.id).catch(console.error));
+    });
+});
+
+client.on(Events.InteractionCreate, async (interaction) => {
+    if (!interaction.guild) {
+        await replyError(interaction, "Cette commande ne fonctionne que dans un serveur.");
+        return;
+    }
+    if (interaction.isChatInputCommand()) {
+        try {
+            await handleCommandInteraction(interaction);
+        } catch (error) {
+            console.error("Erreur dans une commande slash :", error);
+            await replyError(interaction, "Une erreur est survenue.");
+        }
+    } else if (interaction.isButton()) {
+        try {
+            await handleButtonInteraction(interaction);
+        } catch (error) {
+            console.error("Erreur dans un handler de bouton :", error);
+            await replyError(interaction, "Une erreur est survenue.");
+        }
+    }
+});
+
+client.on(Events.MessageCreate, async (message) => {
+    try {
+        await handleDisboardBumpMessage(message);
+    } catch (error) {
+        console.error("Erreur dans le handler de message :", error);
+    }
+});
+
+// Connexion du bot
+client.login(process.env.DISCORD_TOKEN).catch(console.error);
