@@ -2137,7 +2137,7 @@ async function handleCommandInteraction(interaction) {
             const embed = new EmbedBuilder()
                 .setTitle("🗃️ **Infos Base de Données**")
                 .setColor(0x3498db)
-                .addFields(
+                 .addFields(
                     { name: "📊 Points", value: `${stats.points}`, inline: true },
                     { name: "💬 Rumeurs", value: `${stats.rumors}`, inline: true },
                     { name: "🗺️ Quêtes", value: `${stats.quests}`, inline: true },
@@ -2152,6 +2152,14 @@ async function handleCommandInteraction(interaction) {
                     { name: "⚙️ Paramètres", value: `${stats.settings}`, inline: true },
                     { name: "💾 Taille base", value: formatFileSize(dbSize), inline: false },
                     { name: "🔄 Rôles actifs", value: `${getActiveTemporaryRoleCount()}`, inline: true },
+                    { name: "⏳ Rumeurs en attente", value: `${getPendingRumorCount()}`, inline: true },
+                    { name: "⏳ Quêtes en attente", value: `${getPendingQuestSubmissionCount()}`, inline: true }
+                )
+                .setTimestamp();
+            await interaction.reply({ embeds: [embed], ephemeral: true });
+            return;
+        }
+    }
 
 
 
