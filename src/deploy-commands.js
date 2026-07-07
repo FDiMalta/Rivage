@@ -954,12 +954,14 @@ const commands = [
                         .setDescription("La récompense à acheter.")
                         .setRequired(true)
                         .addChoices(
-                            { name: "Titre temporaire — 5 points", value: "titre_temporaire" },
-                            { name: "Nomination Gazette — 8 points", value: "nomination_gazette" },
+                            // ===== NOUVEAUX OBJETS UNIQUEMENT =====
+                            { name: "Emoji personnalisé — 10 points", value: "emoji_personnalise" },
+                            { name: "Commande personnalisée — 20 points", value: "commande_personnalisee" },
+                            { name: "Boost d'XP — 5 points", value: "xp_boost" },
+                            { name: "Nude de colo (fausse) — 15 points", value: "nude_colo" },
+                            { name: "Trophée personnalisé — 30 points", value: "trophee_personnalise" },
                             { name: "Thème de Gazette — 10 points", value: "theme_gazette" },
-                            { name: "Mini-drop personnalisé — 15 points", value: "mini_drop" },
-                            { name: "Interview Gazette — 20 points", value: "interview_gazette" },
-                            { name: "Quête personnalisée — 25 points", value: "quete_personnalisee" }
+                            { name: "Choisir le film — 8 points", value: "film_soiree" }
                         )
                 )
                 .addStringOption(option =>
@@ -1062,8 +1064,6 @@ const commands = [
     /*
       /archive
       Commandes de nettoyage de la base.
-      Important : Discord exige que les options obligatoires soient AVANT les options facultatives.
-      C’est pour ça que confirmer est placé avant jours.
     */
     new SlashCommandBuilder()
         .setName("archive")
@@ -1216,7 +1216,7 @@ async function main() {
             { body: commands }
         );
 
-        console.log("✅ Commandes slash déployées.");
+        console.log("✅ Commandes slash déployées avec succès !");
     } catch (error) {
         console.error("❌ Erreur pendant le déploiement des commandes :");
         console.error(error);
