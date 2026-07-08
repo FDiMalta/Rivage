@@ -642,7 +642,6 @@ async function handleShopPurchaseButton(interaction) {
         return;
     }
 
-    // Vérification spéciale pour le trophée (1 max par personne)
     if (action === "approve" && purchase.item_key === "trophee_personnalise") {
         const existingPurchases = getShopPurchasesByStatus({
             guildId: interaction.guildId,
@@ -1120,7 +1119,7 @@ async function handleCommandInteraction(interaction) {
                 await interaction.reply({ content: `📭 Aucune rumeur en statut **${status}**.`, flags: MessageFlags.Ephemeral });
                 return;
             }
-            const lines = rumors.map(r => `**#${r.id}** — ${truncate(r.content, 100)}\nAuteur: ${r.anonymous ? "Anonyme" : `<@\${r.author_id}>`} | Statut: ${r.status}`);
+            const lines = rumors.map(r => `**#${r.id}** — ${truncate(r.content, 100)}\nAuteur: ${r.anonymous ? "Anonyme" : `<@${r.author_id}>`} | Statut: ${r.status}`);
             await interaction.reply({ content: `📜 **Rumeurs (${status})**\n\n${lines.join("\n\n")}`, flags: MessageFlags.Ephemeral });
             return;
         }
@@ -1240,10 +1239,11 @@ async function handleCommandInteraction(interaction) {
 
             const embeds = [];
 
+            // 1. PREMIER EMBED : Titre + bannière (TOUJOURS en premier)
             const mainEmbed = new EmbedBuilder()
                 .setTitle(`📰 **${titre}**`)
                 .setDescription(
-                    `**Édition du \${new Date().toLocaleDateString("fr-FR", {
+                    `**Édition du ${new Date().toLocaleDateString("fr-FR", {
                         weekday: "long",
                         year: "numeric",
                         month: "long",
@@ -1256,6 +1256,7 @@ async function handleCommandInteraction(interaction) {
                 .setTimestamp();
             embeds.push(mainEmbed);
 
+            // 2. Embed Pépites
             if (pepites.trim()) {
                 const embed = new EmbedBuilder()
                     .setTitle("💎 Pépites de la semaine")
@@ -1265,6 +1266,7 @@ async function handleCommandInteraction(interaction) {
                 embeds.push(embed);
             }
 
+            // 3. Embed Stats
             if (stats.trim()) {
                 const embed = new EmbedBuilder()
                     .setTitle("📊 Statistiques absurdes")
@@ -1274,6 +1276,7 @@ async function handleCommandInteraction(interaction) {
                 embeds.push(embed);
             }
 
+            // 4. Embed Rumeur
             if (rumeur.trim()) {
                 const embed = new EmbedBuilder()
                     .setTitle("🗞️ Rumeur de la semaine")
@@ -1283,6 +1286,7 @@ async function handleCommandInteraction(interaction) {
                 embeds.push(embed);
             }
 
+            // 5. Embed Exploit
             if (exploit.trim()) {
                 const embed = new EmbedBuilder()
                     .setTitle("🏆 Exploit de la semaine")
@@ -1292,6 +1296,7 @@ async function handleCommandInteraction(interaction) {
                 embeds.push(embed);
             }
 
+            // 6. Embed Nominations
             if (nominations.trim()) {
                 const embed = new EmbedBuilder()
                     .setTitle("🎖️ Nominations")
@@ -1301,6 +1306,7 @@ async function handleCommandInteraction(interaction) {
                 embeds.push(embed);
             }
 
+            // 7. Embed Classement (TOUJOURS affiché)
             const classementEmbed = new EmbedBuilder()
                 .setTitle("👑 Classement Points BDL")
                 .setDescription(
@@ -1352,6 +1358,17 @@ async function handleCommandInteraction(interaction) {
             const role = interaction.options.getRole("role");
             setSetting({ guildId: interaction.guildId, key: "bump_role_id", value: role.id });
             await interaction.reply({ content: `✅ Rôle **${role.name}** configuré pour les rappels de bump.`, flags: MessageFlags.Ephemeral });
+            return;
+        }
+
+        if (subcommand === "role_grand_maitre") {
+            if (!isStaff(interaction.member)) {
+                await replyError(interaction, "Seul le staff peut configurer le rôle Grand Maître.");
+                return;
+            }
+            const role = interaction.options.getRole("role");
+            setSetting({ guildId: interaction.guildId, key: "grand_master_role_id", value: role.id });
+            await interaction.reply({ content: `✅ Rôle **${role.name}** configuré comme rôle Grand Maître.`, flags: MessageFlags.Ephemeral });
             return;
         }
 
@@ -1826,7 +1843,7 @@ async function handleCommandInteraction(interaction) {
                 .setDescription(
                     `Partie active depuis le ${new Date(game.created_at).toLocaleDateString("fr-FR")}\n` +
                     `Indices: **${publishedHints} publiés**, **${unpublishedHints} en attente**\n` +
-                    `Bonne(s) réponse(s): ${guesses.length > 0 ? guesses.map(g => `<@\${g.user_id}>`).join(", ") : "Aucune"}`
+                    `Bonne(s) réponse(s): ${guesses.length > 0 ? guesses.map(g => `<@${g.user_id}>`).join(", ") : "Aucune"}`
                 )
                 .setColor(0xf39c12)
                 .setTimestamp();
@@ -1874,22 +1891,25 @@ async function handleCommandInteraction(interaction) {
     if (interaction.commandName === "grandmaitre") {
         const subcommand = interaction.options.getSubcommand();
         if (subcommand === "classement") {
+            if (!isStaff(interaction.member)) {
+                await replyError(interaction, "Seul le staff peut voir le classement Grand Maître.");
+                return;
+            }
             const mois = interaction.options.getInteger("mois") ?? new Date().getMonth() + 1;
             const annee = interaction.options.getInteger("annee") ?? new Date().getFullYear();
-            const secrets = interaction.options.getBoolean("secrets") ?? false;
-            if (secrets && !isStaff(interaction.member)) {
-                await replyError(interaction, "Seul le staff peut voir le classement avec les secrets.");
-                return;
-            }
-            const leaderboard = getMonthlyLeaderboard({ guildId: interaction.guildId, year: annee, month: mois, includeSecret: secrets, limit: 10 });
+
+            const leaderboard = getMonthlyLeaderboard({ guildId: interaction.guildId, year: annee, month: mois, includeSecret: true, limit: 10 });
             if (leaderboard.length === 0) {
-                await interaction.reply(`📊 Aucun point pour **${new Date(annee, mois - 1).toLocaleDateString("fr-FR", { month: "long", year: "numeric" })}**.`);
+                await interaction.reply({
+                    content: `📊 Aucun point pour **${new Date(annee, mois - 1).toLocaleDateString("fr-FR", { month: "long", year: "numeric" })}**.`,
+                    flags: MessageFlags.Ephemeral
+                });
                 return;
             }
-            const lines = leaderboard.map((r, i) => `**${i + 1}.** <@${r.user_id}> — **${r.total} points**`);
+            const lines = leaderboard.map((r, i) => `**${i + 1}.** <@${r.user_id}> — **${r.total} points** (secrets inclus)`);
             await interaction.reply({
-                content: `🏆 **Classement Grand Maître — ${new Date(annee, mois - 1).toLocaleDateString("fr-FR", { month: "long", year: "numeric" })}**${secrets ? " (secrets)" : ""}\n\n${lines.join("\n")}`,
-                flags: secrets ? MessageFlags.Ephemeral : undefined
+                content: `🏆 **Classement Grand Maître — ${new Date(annee, mois - 1).toLocaleDateString("fr-FR", { month: "long", year: "numeric" })}** (secrets inclus)\n\n${lines.join("\n")}`,
+                flags: MessageFlags.Ephemeral
             });
             return;
         }
@@ -1901,14 +1921,14 @@ async function handleCommandInteraction(interaction) {
             }
             const mois = interaction.options.getInteger("mois") ?? new Date().getMonth() + 1;
             const annee = interaction.options.getInteger("annee") ?? new Date().getFullYear();
-            const leaderboard = getMonthlyLeaderboard({ guildId: interaction.guildId, year: annee, month: mois, includeSecret: false, limit: 1 });
+            const leaderboard = getMonthlyLeaderboard({ guildId: interaction.guildId, year: annee, month: mois, includeSecret: true, limit: 1 });
             if (leaderboard.length === 0) {
                 await replyError(interaction, `Aucun point pour ${new Date(annee, mois - 1).toLocaleDateString("fr-FR", { month: "long", year: "numeric" })}.`);
                 return;
             }
             const grandMasterRoleId = getSetting({ guildId: interaction.guildId, key: "grand_master_role_id" });
             if (!grandMasterRoleId) {
-                await replyError(interaction, "Aucun rôle Grand Maître configuré. Utilise `/config`.");
+                await replyError(interaction, "Aucun rôle Grand Maître configuré. Utilise `/config role_grand_maitre`.");
                 return;
             }
             const member = await interaction.guild.members.fetch(leaderboard[0].user_id).catch(() => null);
@@ -1920,7 +1940,7 @@ async function handleCommandInteraction(interaction) {
                 await replyError(interaction, "Impossible de donner le rôle. Vérifie les permissions du bot.");
             });
             await interaction.reply({
-                content: `👑 **<@${leaderboard[0].user_id}>** est couronné **Grand Maître** pour **${new Date(annee, mois - 1).toLocaleDateString("fr-FR", { month: "long", year: "numeric" })}** !`,
+                content: `👑 **<@${leaderboard[0].user_id}>** est couronné **Grand Maître** pour **${new Date(annee, mois - 1).toLocaleDateString("fr-FR", { month: "long", year: "numeric" })}** ! (Total: **${leaderboard[0].total} points** avec secrets)`,
                 flags: MessageFlags.Ephemeral
             });
             return;
@@ -2137,7 +2157,7 @@ async function handleCommandInteraction(interaction) {
             const embed = new EmbedBuilder()
                 .setTitle("🗃️ **Infos Base de Données**")
                 .setColor(0x3498db)
-                 .addFields(
+                .addFields(
                     { name: "📊 Points", value: `${stats.points}`, inline: true },
                     { name: "💬 Rumeurs", value: `${stats.rumors}`, inline: true },
                     { name: "🗺️ Quêtes", value: `${stats.quests}`, inline: true },
@@ -2161,9 +2181,7 @@ async function handleCommandInteraction(interaction) {
         }
     }
 
-
-
-            // ===== ARCHIVE =====
+    // ===== ARCHIVE =====
     if (interaction.commandName === "archive") {
         const subcommand = interaction.options.getSubcommand();
         if (subcommand === "old_drops") {
@@ -2175,7 +2193,8 @@ async function handleCommandInteraction(interaction) {
             const jours = interaction.options.getInteger("jours") ?? 30;
             if (!confirmer) {
                 await interaction.reply({
-content: `⚠️ **Attention** : Cette commande supprimera les Drop Events **terminés depuis +${jours} jours**.\n\nUtilise \`/archive old_drops confirmer:true jours:${jours}\`.`,                    flags: MessageFlags.Ephemeral
+                    content: `⚠️ **Attention** : Cette commande supprimera les Drop Events **terminés depuis +${jours} jours**.\n\nUtilise \`/archive old_drops confirmer:true jours:${jours}\`.`,
+                    flags: MessageFlags.Ephemeral
                 });
                 return;
             }
@@ -2195,7 +2214,8 @@ content: `⚠️ **Attention** : Cette commande supprimera les Drop Events **ter
             const jours = interaction.options.getInteger("jours") ?? 30;
             if (!confirmer) {
                 await interaction.reply({
-content: `⚠️ **Attention** : Supprimera les rumeurs **refusées depuis +${jours} jours**.\n\nUtilise \`/archive old_rumors confirmer:true jours:${jours}\`.`,                    flags: MessageFlags.Ephemeral
+                    content: `⚠️ **Attention** : Supprimera les rumeurs **refusées depuis +${jours} jours**.\n\nUtilise \`/archive old_rumors confirmer:true jours:${jours}\`.`,
+                    flags: MessageFlags.Ephemeral
                 });
                 return;
             }
@@ -2212,7 +2232,8 @@ content: `⚠️ **Attention** : Supprimera les rumeurs **refusées depuis +${jo
             const jours = interaction.options.getInteger("jours") ?? 30;
             if (!confirmer) {
                 await interaction.reply({
-content: `⚠️ **Attention** : Supprimera les parties **terminées depuis +${jours} jours**.\n\nUtilise \`/archive old_mysteries confirmer:true jours:${jours}\`.`,                    flags: MessageFlags.Ephemeral
+                    content: `⚠️ **Attention** : Supprimera les parties **terminées depuis +${jours} jours**.\n\nUtilise \`/archive old_mysteries confirmer:true jours:${jours}\`.`,
+                    flags: MessageFlags.Ephemeral
                 });
                 return;
             }
@@ -2232,7 +2253,8 @@ content: `⚠️ **Attention** : Supprimera les parties **terminées depuis +${j
             const jours = interaction.options.getInteger("jours") ?? 30;
             if (!confirmer) {
                 await interaction.reply({
-content: `⚠️ **Attention** : Supprimera les rôles **retirés depuis +${jours} jours**.\n\nUtilise \`/archive old_temp_roles confirmer:true jours:${jours}\`.`,                    flags: MessageFlags.Ephemeral
+                    content: `⚠️ **Attention** : Supprimera les rôles **retirés depuis +${jours} jours**.\n\nUtilise \`/archive old_temp_roles confirmer:true jours:${jours}\`.`,
+                    flags: MessageFlags.Ephemeral
                 });
                 return;
             }
@@ -2248,7 +2270,7 @@ content: `⚠️ **Attention** : Supprimera les rôles **retirés depuis +${jour
             const confirmer = interaction.options.getBoolean("confirmer");
             if (!confirmer) {
                 await interaction.reply({
-                    content: "⚠️ **Attention** : Optimise le fichier SQLite.\\nUtilise `/archive vacuum confirmer:true`.",
+                    content: "⚠️ **Attention** : Optimise le fichier SQLite.\nUtilise `/archive vacuum confirmer:true`.",
                     flags: MessageFlags.Ephemeral
                 });
                 return;
@@ -2260,14 +2282,14 @@ content: `⚠️ **Attention** : Supprimera les rôles **retirés depuis +${jour
         if (subcommand === "info") {
             await interaction.reply({
                 content:
-                    `🗑️ **Commandes d’archive**\\n\\n` +
-                    `Nettoie les anciennes données pour éviter que la base ne devienne trop grosse.\\n\\n` +
-                    `**Disponibles :**\\n` +
-                    `- /archive old_drops : Supprime les Drop Events terminés\\n` +
-                    `- /archive old_rumors : Supprime les rumeurs refusées\\n` +
-                    `- /archive old_mysteries : Supprime les parties Membre Mystère terminées\\n` +
-                    `- /archive old_temp_roles : Supprime l’historique des rôles temporaires\\n` +
-                    `- /archive vacuum : Optimise le fichier SQLite\\n\\n` +
+                    `🗑️ **Commandes d’archive**\n\n` +
+                    `Nettoie les anciennes données pour éviter que la base ne devienne trop grosse.\n\n` +
+                    `**Disponibles :**\n` +
+                    `- /archive old_drops : Supprime les Drop Events terminés\n` +
+                    `- /archive old_rumors : Supprime les rumeurs refusées\n` +
+                    `- /archive old_mysteries : Supprime les parties Membre Mystère terminées\n` +
+                    `- /archive old_temp_roles : Supprime l’historique des rôles temporaires\n` +
+                    `- /archive vacuum : Optimise le fichier SQLite\n\n` +
                     `⚠️ **Toutes ces commandes nécessitent **confirmer:true** et sont réservées au staff.`,
                 flags: MessageFlags.Ephemeral
             });
@@ -2288,16 +2310,16 @@ client.once(Events.ClientReady, (c) => {
 
     // Tâches planifiées
     cron.schedule("*/10 * * * *", () => cleanupExpiredTemporaryRoles(c).catch(console.error));
-    cron.schedule("0 18 * * 3,5", () => { // Mercredi et vendredi à 18h
+    cron.schedule("0 18 * * 3,5", () => {
         c.guilds.cache.forEach(g => publishMysteryHint(c, g.id, 1).catch(console.error));
     });
-    cron.schedule("0 19 * * 3,5", () => { // Mercredi et vendredi à 19h
+    cron.schedule("0 19 * * 3,5", () => {
         c.guilds.cache.forEach(g => publishMysteryHint(c, g.id, 2).catch(console.error));
     });
-    cron.schedule("0 20 * * 6", () => { // Samedi à 20h
+    cron.schedule("0 20 * * 6", () => {
         c.guilds.cache.forEach(g => sendMysteryRevealReminder(c, g.id).catch(console.error));
     });
-    cron.schedule("0 * * * *", () => { // Toutes les heures
+    cron.schedule("0 * * * *", () => {
         c.guilds.cache.forEach(g => checkScheduledBumpReminder(c, g.id).catch(console.error));
     });
 });
