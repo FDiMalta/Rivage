@@ -1848,7 +1848,7 @@ async function handleCommandInteraction(interaction) {
                 .setDescription(
                     `Partie active depuis le ${new Date(game.created_at).toLocaleDateString("fr-FR")}\n` +
                     `Indices: **${publishedHints} publiés**, **${unpublishedHints} en attente**\n` +
-                    'Bonne(s) réponse(s): ${guesses.length > 0 ? guesses.map(g => `<@${g.userId}>`).join(", ") : "Aucune"}'
+                    'Bonne(s) réponse(s): '${guesses.length > 0 ? guesses.map(g => <@${g.userId}>').join(", ") : "Aucune"'}'
                 )
                 .setColor(0xf39c12)
                 .setTimestamp();
