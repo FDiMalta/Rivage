@@ -1243,13 +1243,13 @@ async function handleCommandInteraction(interaction) {
             const mainEmbed = new EmbedBuilder()
                 .setTitle(`📰 **${titre}**`)
                 const now = new Date();
-const days = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'];
-const months = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
-const dateStr = `${days[now.getDay()]} ${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()}`;
+                const days = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'];
+                const months = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
+                const dateStr = `${days[now.getDay()]} ${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()}`;
 
-const mainEmbed = new EmbedBuilder()
-    .setTitle(`📰 **${titre}**`)
-    .setDescription(`**Édition du ${dateStr}**\n*La Gazette BDL.*`)
+                const mainEmbed = new EmbedBuilder()
+                .setTitle(`📰 **${titre}**`)
+                .setDescription(`**Édition du ${dateStr}**\n*La Gazette BDL.*`)
 
                 .setColor(0x9b59b6)
                 .setImage(banniere ? banniere.url : pointsBannerUrl)
