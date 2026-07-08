@@ -2323,6 +2323,19 @@ client.once(Events.ClientReady, (c) => {
     });
     cron.schedule("0 * * * *", () => {
         c.guilds.cache.forEach(g => checkScheduledBumpReminder(c, g.id).catch(console.error));
+    // ===== NOUVELLE TÂCHE : Réinitialisation mensuelle =====
+    cron.schedule("0 0 1 * *", () => {  // Tous les 1er du mois à 00:00 (minuit)
+        db.run("UPDATE users SET monthly_points = 0", (err) => {
+            if (err) {
+                console.error("❌ Erreur lors de la réinitialisation des points mensuels :", err);
+            } else {
+                console.log("✅ Points mensuels réinitialisés pour tous les utilisateurs.");
+        }
+    });
+}, {
+    scheduled: true,
+    timezone: "Europe/Paris"  // Important : fuseau horaire français
+});
     });
 });
 
