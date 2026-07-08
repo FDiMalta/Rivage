@@ -192,11 +192,11 @@ const commands = [
                 ]
             },
             {
-                name: "role_grand_maitre",
-                description: "Configure le rôle Grand Maître.",
+                name: "role_mini_maitre",
+                description: "Configure le rôle Mini Maître.",
                 type: ApplicationCommandOptionType.Subcommand,
                 options: [
-                    { name: "role", description: "Le rôle Grand Maître.", type: ApplicationCommandOptionType.Role, required: true }
+                    { name: "role", description: "Le rôle Mini Maître.", type: ApplicationCommandOptionType.Role, required: true }
                 ]
             },
             {
@@ -371,10 +371,10 @@ const commands = [
         ]
     },
 
-    // ===== GRAND MAÎTRE =====
+    // ===== GRAND MAÎTRE (classement mensuel) =====
     {
         name: "grandmaitre",
-        description: "Gère le classement mensuel Grand Maître.",
+        description: "Gère le classement mensuel Mini Maître.",
         options: [
             {
                 name: "classement",
@@ -387,7 +387,7 @@ const commands = [
             },
             {
                 name: "couronner",
-                description: "Couronne le Grand Maître du mois (basé sur points + secrets).",
+                description: "Couronne le Mini Maître du mois (basé sur points + secrets).",
                 type: ApplicationCommandOptionType.Subcommand,
                 options: [
                     { name: "mois", description: "Mois (1-12).", type: ApplicationCommandOptionType.Integer },
@@ -555,7 +555,7 @@ const rest = new REST({ version: '10' }).setToken(DISCORD_TOKEN);
 
         console.log('✅ Commandes déployées avec succès !');
         console.log('⏳ Attendez 1-5 minutes pour que Discord synchronise les modifications.');
-        console.log('⚠️  N\'oubliez pas de configurer le rôle Grand Maître avec: /config role_grand_maitre role:@RôleGrandMaitre');
+        console.log('⚠️  N\'oubliez pas de configurer le rôle Mini Maître avec: /config role_mini_maitre role:@RôleMiniMaitre');
     } catch (error) {
         console.error('❌ Erreur lors du déploiement des commandes :', error);
     }
