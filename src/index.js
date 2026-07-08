@@ -1847,8 +1847,7 @@ async function handleCommandInteraction(interaction) {
                 .setTitle(`🕵️ **Membre Mystère — ${game.week_key}**`)
                 .setDescription(
                     `Partie active depuis le ${new Date(game.created_at).toLocaleDateString("fr-FR")}\n` +
-                    `Indices: **${publishedHints} publiés**, **${unpublishedHints} en attente**\n` +
-                )
+                    `Indices: **${publishedHints} publiés**, **${unpublishedHints} en attente**\n`)
                 .setColor(0xf39c12)
                 .setTimestamp();
             await interaction.reply({ embeds: [embed], ephemeral: true });
