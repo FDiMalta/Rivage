@@ -1,13 +1,9 @@
-// Charge les variables du fichier .env.
 require("dotenv").config();
-
 // Module Node natif pour manipuler les fichiers.
 const fs = require("node:fs");
 const path = require("node:path");
-
 // Librairie pour les tâches planifiées.
 const cron = require("node-cron");
-
 // Imports principaux de discord.js.
 const {
     Client,
@@ -21,7 +17,6 @@ const {
     ButtonStyle,
     AttachmentBuilder
 } = require("discord.js");
-
 // Import de toutes les fonctions de database.js.
 const {
     // Points
@@ -31,19 +26,16 @@ const {
     getMonthlyLeaderboard,
     getUserPointsHistory,
     getUserRank,
-
     // Rumeurs
     addRumor,
     getRumorsByStatus,
     updateRumorStatus,
     getRumorById,
     getUserApprovedRumorCount,
-
     // Configuration
     setSetting,
     getSetting,
     getAllSettings,
-
     // Quêtes
     addQuest,
     getActiveQuests,
@@ -54,14 +46,12 @@ const {
     updateQuestSubmissionStatus,
     closeQuest,
     getUserApprovedQuestCount,
-
     // Rôles temporaires
     addTemporaryRole,
     getExpiredTemporaryRoles,
     markTemporaryRoleRemoved,
     getActiveTemporaryRoles,
     getUserActiveTemporaryRoles,
-
     // Membre Mystère
     createMysteryGame,
     getActiveMysteryGame,
@@ -74,7 +64,6 @@ const {
     hasMysteryGuessToday,
     getTopCorrectMysteryGuessers,
     revealMysteryGame,
-
     // Drop Events
     createDropEvent,
     setDropMessageId,
@@ -82,20 +71,17 @@ const {
     addDropParticipant,
     getDropParticipants,
     endDropEvent,
-
     // Boutique de points
     addShopPurchase,
     getShopPurchaseById,
     getShopPurchasesByStatus,
     getUserShopPurchases,
     updateShopPurchaseStatus,
-
     // Backup / statistiques
     getBackupStats,
     getActiveTemporaryRoleCount,
     getPendingRumorCount,
     getPendingQuestSubmissionCount,
-
     // Archive / nettoyage
     deleteOldDropEvents,
     deleteOldRejectedRumors,
@@ -103,7 +89,6 @@ const {
     deleteOldRemovedTemporaryRoles,
     vacuumDatabase
 } = require("./database");
-
 // Création du client Discord.
 const client = new Client({
     intents: [
@@ -114,29 +99,24 @@ const client = new Client({
         GatewayIntentBits.MessageContent
     ]
 });
-
 /* =========================
    OUTILS
 ========================= */
-
 // Vérifie si un membre est staff.
 function isStaff(member) {
     if (!member) return false;
     if (member.permissions.has(PermissionFlagsBits.Administrator)) return true;
     if (member.permissions.has(PermissionFlagsBits.ManageRoles)) return true;
-
     const staffRoleId = getSetting({ guildId: member.guild.id, key: "staff_role_id" });
     if (!staffRoleId) return false;
     return member.roles.cache.has(staffRoleId);
 }
-
 // Coupe un texte trop long.
 function truncate(text, maxLength = 900) {
     if (!text) return "";
     if (text.length <= maxLength) return text;
     return text.slice(0, maxLength - 3) + "...";
 }
-
 // Transforme les \n en vrais retours à la ligne.
 function formatMultilineInput(text, maxLength = 900) {
     if (!text) return "";
@@ -145,14 +125,12 @@ function formatMultilineInput(text, maxLength = 900) {
         maxLength
     );
 }
-
 // Applique une image à un embed.
 function applyAttachmentImage(embed, attachment) {
     if (!attachment) return embed;
     if (attachment.contentType && !attachment.contentType.startsWith("image/")) return embed;
     return embed.setImage(attachment.url);
 }
-
 // ===== BOUTIQUE =====
 const SHOP_ITEMS = {
     emoji_personnalise: {
@@ -191,45 +169,38 @@ const SHOP_ITEMS = {
         description: "Choisis le film pour la prochaine soirée popcorn."
     }
 };
-
 function formatShopItemList() {
     return Object.entries(SHOP_ITEMS)
         .sort((a, b) => a[1].price - b[1].price)
         .map(([key, item]) => {
-            return `**${item.name}** — **${item.price} points**\n${item.description}\n\`/boutique acheter item:\${key} note:...\``;
+            return `**${item.name}** — **${item.price} points**\n${item.description}\n\`/boutique acheter item:${key} note:...\``;
         })
         .join("\n\n");
 }
-
 // Génère une URL de bannière avec le nombre de points.
 function getPointsBannerUrl(points) {
     return `https://via.placeholder.com/600x200/9b59b6/FFFFFF?text=+${points}+POINTS+BDL`;
 }
-
 // Ajoute un nombre de jours à une date.
 function addDays(date, days) {
     const result = new Date(date.getTime());
     result.setDate(result.getDate() + days);
     return result;
 }
-
 // Formate une date pour la base SQLite.
 function formatDateForDatabase(date) {
     return date.toISOString();
 }
-
 // Calcule une date limite pour le nettoyage.
 function getCleanupDate(days) {
     return formatDateForDatabase(subtractDays(new Date(), days));
 }
-
 // Retire un nombre de jours à une date.
 function subtractDays(date, days) {
     const result = new Date(date.getTime());
     result.setDate(result.getDate() - days);
     return result;
 }
-
 // Formate la taille d'un fichier.
 function formatFileSize(bytes) {
     if (bytes < 1024) return `${bytes} o`;
@@ -238,7 +209,6 @@ function formatFileSize(bytes) {
     const mb = kb / 1024;
     return `${mb.toFixed(2)} Mo`;
 }
-
 // Génère une clé de semaine (ex: 2026-S21).
 function getWeekKey(date = new Date()) {
     const year = date.getFullYear();
@@ -247,7 +217,6 @@ function getWeekKey(date = new Date()) {
     const weekNumber = Math.ceil((pastDaysOfYear + firstDayOfYear.getDay() + 1) / 7);
     return `${year}-S${String(weekNumber).padStart(2, "0")}`;
 }
-
 // Fonction d'erreur propre.
 async function replyError(interaction, message = "Une erreur est survenue.") {
     const payload = { content: `❌ ${message}`, flags: MessageFlags.Ephemeral };
@@ -261,11 +230,9 @@ async function replyError(interaction, message = "Une erreur est survenue.") {
         console.error("Impossible d'envoyer le message d'erreur :", error);
     }
 }
-
 /* =========================
    BOUTONS
 ========================= */
-
 function createRumorButtons(rumorId) {
     return new ActionRowBuilder().addComponents(
         new ButtonBuilder()
@@ -280,7 +247,6 @@ function createRumorButtons(rumorId) {
             .setStyle(ButtonStyle.Danger)
     );
 }
-
 function createDisabledRumorButtons(rumorId) {
     return new ActionRowBuilder().addComponents(
         new ButtonBuilder()
@@ -297,7 +263,6 @@ function createDisabledRumorButtons(rumorId) {
             .setDisabled(true)
     );
 }
-
 function createQuestSubmissionButtons(submissionId) {
     return new ActionRowBuilder().addComponents(
         new ButtonBuilder()
@@ -312,7 +277,6 @@ function createQuestSubmissionButtons(submissionId) {
             .setStyle(ButtonStyle.Danger)
     );
 }
-
 function createDisabledQuestSubmissionButtons(submissionId) {
     return new ActionRowBuilder().addComponents(
         new ButtonBuilder()
@@ -329,7 +293,6 @@ function createDisabledQuestSubmissionButtons(submissionId) {
             .setDisabled(true)
     );
 }
-
 function createDropButton(dropId) {
     return new ActionRowBuilder().addComponents(
         new ButtonBuilder()
@@ -339,7 +302,6 @@ function createDropButton(dropId) {
             .setStyle(ButtonStyle.Primary)
     );
 }
-
 function createDisabledDropButton(dropId) {
     return new ActionRowBuilder().addComponents(
         new ButtonBuilder()
@@ -350,7 +312,6 @@ function createDisabledDropButton(dropId) {
             .setDisabled(true)
     );
 }
-
 function createShopPurchaseButtons(purchaseId) {
     return new ActionRowBuilder().addComponents(
         new ButtonBuilder()
@@ -365,7 +326,6 @@ function createShopPurchaseButtons(purchaseId) {
             .setStyle(ButtonStyle.Danger)
     );
 }
-
 function createDisabledShopPurchaseButtons(purchaseId) {
     return new ActionRowBuilder().addComponents(
         new ButtonBuilder()
@@ -382,46 +342,37 @@ function createDisabledShopPurchaseButtons(purchaseId) {
             .setDisabled(true)
     );
 }
-
 /* =========================
    HANDLERS BOUTONS
 ========================= */
-
 async function handleRumorButton(interaction) {
     if (!isStaff(interaction.member)) {
         await replyError(interaction, "Seul le staff peut valider ou refuser les rumeurs.");
         return;
     }
-
     const parts = interaction.customId.split("_");
     const action = parts[1];
     const rumorId = Number(parts[2]);
-
     if (!rumorId || !["approve", "reject"].includes(action)) {
         await replyError(interaction, "Bouton invalide.");
         return;
     }
-
     const rumor = getRumorById({ guildId: interaction.guildId, rumorId });
     if (!rumor) {
         await replyError(interaction, `Aucune rumeur trouvée avec l’ID #${rumorId}.`);
         return;
     }
-
     if (rumor.status !== "pending") {
         await replyError(interaction, `Cette rumeur a déjà été traitée (statut : ${rumor.status}).`);
         return;
     }
-
     const oldEmbed = interaction.message.embeds?.[0];
     if (!oldEmbed) {
         await replyError(interaction, "Impossible de mettre à jour ce message (embed manquant).");
         return;
     }
-
     const newStatus = action === "approve" ? "approved" : "rejected";
     const statusLabel = action === "approve" ? "Approuvée ✅" : "Refusée ❌";
-
     updateRumorStatus({
         guildId: interaction.guildId,
         rumorId,
@@ -429,48 +380,39 @@ async function handleRumorButton(interaction) {
         reviewedBy: interaction.user.id,
         reviewReason: action === "reject" ? "Refusée via bouton staff." : null
     });
-
     const updatedEmbed = EmbedBuilder.from(oldEmbed)
         .spliceFields(3, 1, { name: "Statut", value: `${statusLabel} par ${interaction.user}`, inline: true });
-
     await interaction.update({
         embeds: [updatedEmbed],
         components: [createDisabledRumorButtons(rumorId)]
     }).catch(() => replyError(interaction, "Impossible de mettre à jour le message."));
 }
-
 async function handleQuestSubmissionButton(interaction) {
     if (!isStaff(interaction.member)) {
         await replyError(interaction, "Seul le staff peut valider ou refuser les quêtes.");
         return;
     }
-
     const parts = interaction.customId.split("_");
     const action = parts[1];
     const submissionId = Number(parts[2]);
-
     if (!submissionId || !["approve", "reject"].includes(action)) {
         await replyError(interaction, "Bouton invalide.");
         return;
     }
-
     const submission = getQuestSubmissionById({ guildId: interaction.guildId, submissionId });
     if (!submission) {
         await replyError(interaction, `Aucune validation trouvée avec l’ID #${submissionId}.`);
         return;
     }
-
     if (submission.status !== "pending") {
         await replyError(interaction, `Cette validation a déjà été traitée (statut : ${submission.status}).`);
         return;
     }
-
     const oldEmbed = interaction.message.embeds?.[0];
     if (!oldEmbed) {
         await replyError(interaction, "Impossible de mettre à jour ce message (embed manquant).");
         return;
     }
-
     if (action === "approve") {
         updateQuestSubmissionStatus({
             guildId: interaction.guildId,
@@ -478,7 +420,6 @@ async function handleQuestSubmissionButton(interaction) {
             status: "approved",
             reviewedBy: interaction.user.id
         });
-
         addPoints({
             guildId: interaction.guildId,
             userId: submission.user_id,
@@ -487,7 +428,6 @@ async function handleQuestSubmissionButton(interaction) {
             isSecret: false,
             createdBy: interaction.user.id
         });
-
         if (submission.reward_role_id) {
             const member = await interaction.guild.members.fetch(submission.user_id).catch(() => null);
             if (!member) {
@@ -498,12 +438,10 @@ async function handleQuestSubmissionButton(interaction) {
             } else {
                 const roleDays = submission.reward_role_days ?? 7;
                 const expiresAt = addDays(new Date(), roleDays);
-
                 await member.roles.add(
                     submission.reward_role_id,
                     `Rôle temporaire : ${submission.quest_title}`
                 ).catch(console.error);
-
                 addTemporaryRole({
                     guildId: interaction.guildId,
                     userId: submission.user_id,
@@ -515,7 +453,6 @@ async function handleQuestSubmissionButton(interaction) {
             }
         }
     }
-
     if (action === "reject") {
         updateQuestSubmissionStatus({
             guildId: interaction.guildId,
@@ -525,51 +462,42 @@ async function handleQuestSubmissionButton(interaction) {
             reviewReason: "Refusée via bouton staff."
         });
     }
-
     const statusLabel = action === "approve" ? "Approuvée ✅" : "Refusée ❌";
     const updatedEmbed = EmbedBuilder.from(oldEmbed)
         .spliceFields(4, 1, { name: "Statut", value: `${statusLabel} par ${interaction.user}`, inline: true });
-
     await interaction.update({
         embeds: [updatedEmbed],
         components: [createDisabledQuestSubmissionButtons(submissionId)]
     }).catch(() => replyError(interaction, "Impossible de mettre à jour le message."));
 }
-
 async function handleDropButton(interaction) {
     const parts = interaction.customId.split("_");
     const action = parts[1];
     const dropId = Number(parts[2]);
-
     if (action !== "join" || !dropId) {
         await replyError(interaction, "Bouton Drop invalide.");
         return;
     }
-
     const drop = getDropEventById({ guildId: interaction.guildId, dropId });
     if (!drop) {
         await replyError(interaction, "Drop Event introuvable.");
         return;
     }
-
     if (drop.status !== "active") {
         await replyError(interaction, "Ce Drop Event est déjà terminé.");
         return;
     }
-
     const participantsBefore = getDropParticipants({ guildId: interaction.guildId, dropId });
     if (participantsBefore.length >= drop.max_winners) {
         await replyError(interaction, "Trop tard, tous les gagnants ont déjà été pris.");
         return;
     }
-
     try {
         addDropParticipant({ guildId: interaction.guildId, dropId, userId: interaction.user.id });
     } catch (error) {
         await replyError(interaction, "Tu participes déjà à ce Drop Event.");
         return;
     }
-
     addPoints({
         guildId: interaction.guildId,
         userId: interaction.user.id,
@@ -578,19 +506,15 @@ async function handleDropButton(interaction) {
         isSecret: false,
         createdBy: interaction.client.user.id
     });
-
     const participants = getDropParticipants({ guildId: interaction.guildId, dropId });
     const winnersText = participants.map((p, i) => `**${i + 1}.** <@${p.user_id}>`).join("\n");
     const isFinished = participants.length >= drop.max_winners;
-
     if (isFinished) endDropEvent({ guildId: interaction.guildId, dropId });
-
     const oldEmbed = interaction.message.embeds?.[0];
     if (!oldEmbed) {
         await replyError(interaction, "Impossible de mettre à jour ce message (embed manquant).");
         return;
     }
-
     const updatedEmbed = EmbedBuilder.from(oldEmbed)
         .spliceFields(0, 1, {
             name: isFinished ? "🎁 Gagnants finaux" : "🎁 Participants",
@@ -603,52 +527,43 @@ async function handleDropButton(interaction) {
                   `Récompense : **+${drop.reward_points} point(s)**\n\n` +
                   `Places restantes : **${drop.max_winners - participants.length}**`
         );
-
     await interaction.update({
         embeds: [updatedEmbed],
         components: isFinished ? [createDisabledDropButton(dropId)] : [createDropButton(dropId)]
     }).catch(() => replyError(interaction, "Impossible de mettre à jour le message."));
 }
-
 async function handleShopPurchaseButton(interaction) {
     if (!isStaff(interaction.member)) {
         await replyError(interaction, "Seul le staff peut valider ou refuser les achats boutique.");
         return;
     }
-
     const parts = interaction.customId.split("_");
     const action = parts[1];
     const purchaseId = Number(parts[2]);
-
     if (!purchaseId || !["approve", "reject"].includes(action)) {
         await replyError(interaction, "Bouton boutique invalide.");
         return;
     }
-
     const purchase = getShopPurchaseById({ guildId: interaction.guildId, purchaseId });
     if (!purchase) {
         await replyError(interaction, `Aucune demande boutique trouvée avec l’ID #${purchaseId}.`);
         return;
     }
-
     if (purchase.status !== "pending") {
         await replyError(interaction, `Cette demande a déjà été traitée (statut : ${purchase.status}).`);
         return;
     }
-
     const oldEmbed = interaction.message.embeds?.[0];
     if (!oldEmbed) {
         await replyError(interaction, "Impossible de mettre à jour ce message (embed manquant).");
         return;
     }
-
     if (action === "approve" && purchase.item_key === "trophee_personnalise") {
         const existingPurchases = getShopPurchasesByStatus({
             guildId: interaction.guildId,
             status: "approved"
         }) || [];
         const existingTrophees = existingPurchases.filter(p => p.user_id === purchase.user_id && p.item_key === "trophee_personnalise");
-
         if (existingTrophees.length >= 1) {
             await interaction.reply({
                 content: "❌ **Limite atteinte** : 1 trophée personnalisé max par membre.",
@@ -657,14 +572,12 @@ async function handleShopPurchaseButton(interaction) {
             return;
         }
     }
-
     if (action === "approve") {
         const total = getUserTotalPoints({
             guildId: interaction.guildId,
             userId: purchase.user_id,
             includeSecret: false
         });
-
         if (total < purchase.price) {
             await interaction.reply({
                 content: `❌ <@${purchase.user_id}> n’a pas assez de points publics.\nPrix : **${purchase.price}**, total actuel : **${total}**.`,
@@ -672,7 +585,6 @@ async function handleShopPurchaseButton(interaction) {
             });
             return;
         }
-
         addPoints({
             guildId: interaction.guildId,
             userId: purchase.user_id,
@@ -681,7 +593,6 @@ async function handleShopPurchaseButton(interaction) {
             isSecret: false,
             createdBy: interaction.user.id
         });
-
         updateShopPurchaseStatus({
             guildId: interaction.guildId,
             purchaseId,
@@ -689,7 +600,6 @@ async function handleShopPurchaseButton(interaction) {
             reviewedBy: interaction.user.id,
             reviewReason: "Achat approuvé via bouton staff."
         });
-
         const embed = EmbedBuilder.from(oldEmbed)
             .setColor(0x2ecc71)
             .spliceFields(5, 1, {
@@ -697,11 +607,9 @@ async function handleShopPurchaseButton(interaction) {
                 value: `✅ Achat approuvé par ${interaction.user}.\nLes **${purchase.price} points** ont été retirés.`,
                 inline: false
             });
-
         await interaction.update({ embeds: [embed], components: [createDisabledShopPurchaseButtons(purchaseId)] });
         return;
     }
-
     updateShopPurchaseStatus({
         guildId: interaction.guildId,
         purchaseId,
@@ -709,7 +617,6 @@ async function handleShopPurchaseButton(interaction) {
         reviewedBy: interaction.user.id,
         reviewReason: "Achat refusé via bouton staff."
     });
-
     const embed = EmbedBuilder.from(oldEmbed)
         .setColor(0xe74c3c)
         .spliceFields(5, 1, {
@@ -717,10 +624,8 @@ async function handleShopPurchaseButton(interaction) {
             value: `❌ Achat refusé par ${interaction.user}.`,
             inline: false
         });
-
     await interaction.update({ embeds: [embed], components: [createDisabledShopPurchaseButtons(purchaseId)] });
 }
-
 // Routeur des boutons.
 async function handleButtonInteraction(interaction) {
     if (interaction.customId.startsWith("rumor_")) await handleRumorButton(interaction);
@@ -728,210 +633,170 @@ async function handleButtonInteraction(interaction) {
     else if (interaction.customId.startsWith("drop_")) await handleDropButton(interaction);
     else if (interaction.customId.startsWith("shop_")) await handleShopPurchaseButton(interaction);
 }
-
 /* =========================
    JOBS AUTOMATIQUES
 ========================= */
-
 async function cleanupExpiredTemporaryRoles(client) {
     const now = new Date().toISOString();
     const expiredRoles = getExpiredTemporaryRoles({ now });
     if (expiredRoles.length === 0) return;
-
     for (const tempRole of expiredRoles) {
         const guild = await client.guilds.fetch(tempRole.guild_id).catch(() => null);
         if (!guild) {
             markTemporaryRoleRemoved({ id: tempRole.id });
             continue;
         }
-
         const member = await guild.members.fetch(tempRole.user_id).catch(() => null);
         if (!member) {
             markTemporaryRoleRemoved({ id: tempRole.id });
             continue;
         }
-
         await member.roles.remove(tempRole.role_id, "Rôle temporaire BDL expiré").catch(() => null);
         markTemporaryRoleRemoved({ id: tempRole.id });
     }
-
     console.log(`🧹 ${expiredRoles.length} rôle(s) temporaire(s) expiré(s) nettoyé(s).`);
 }
-
 async function publishMysteryHint(client, guildId, hintNumber) {
     const guild = await client.guilds.fetch(guildId).catch(() => null);
     if (!guild) {
         console.log("❌ Serveur introuvable pour publier l’indice mystère.");
         return;
     }
-
     const game = getActiveMysteryGame({ guildId });
     if (!game) {
         console.log("📭 Aucun Membre Mystère actif.");
         return;
     }
-
     const hint = getMysteryHintByNumber({ guildId, gameId: game.id, hintNumber });
     if (!hint) {
         console.log(`📭 Aucun indice #${hintNumber} trouvé.`);
         return;
     }
-
     if (hint.published === 1) {
         console.log(`ℹ️ Indice #${hintNumber} déjà publié.`);
         return;
     }
-
     const mysteryChannelId = getSetting({ guildId, key: "mystery_channel_id" });
     if (!mysteryChannelId) {
         console.log("❌ Aucun salon Membre Mystère configuré.");
         return;
     }
-
     const channel = await guild.channels.fetch(mysteryChannelId).catch(() => null);
     if (!channel || !channel.isTextBased()) {
         console.log("❌ Salon Membre Mystère introuvable ou invalide.");
         return;
     }
-
     const embed = new EmbedBuilder()
         .setTitle(`🕵️ Membre Mystère — Indice #${hintNumber}`)
         .setDescription(hint.content)
         .setFooter({ text: "Faites vos propositions avec /mystere guess" })
         .setTimestamp();
-
     await channel.send({ embeds: [embed] });
     markMysteryHintPublished({ guildId, gameId: game.id, hintNumber });
     console.log(`✅ Indice Membre Mystère #${hintNumber} publié.`);
 }
-
 async function sendMysteryRevealReminder(client, guildId) {
     const guild = await client.guilds.fetch(guildId).catch(() => null);
     if (!guild) {
         console.log("❌ Serveur introuvable pour le rappel Membre Mystère.");
         return;
     }
-
     const game = getActiveMysteryGame({ guildId });
     if (!game) {
         console.log("📭 Aucun Membre Mystère actif pour le rappel.");
         return;
     }
-
     const mysteryChannelId = getSetting({ guildId, key: "mystery_channel_id" });
     if (!mysteryChannelId) {
         console.log("❌ Aucun salon Membre Mystère configuré pour le rappel.");
         return;
     }
-
     const channel = await guild.channels.fetch(mysteryChannelId).catch(() => null);
     if (!channel || !channel.isTextBased()) {
         console.log("❌ Salon Membre Mystère introuvable pour le rappel.");
         return;
     }
-
     const embed = new EmbedBuilder()
         .setTitle("🕵️ Révélation du Membre Mystère ce soir")
         .setDescription("La révélation officielle aura lieu à **21h**.\n\nDernière chance pour faire une proposition avec `/mystere guess`.")
         .setTimestamp();
-
     await channel.send({ embeds: [embed] });
     console.log("✅ Rappel de révélation Membre Mystère envoyé.");
 }
-
 async function sendBumpReminder(client, guildId) {
     const guild = await client.guilds.fetch(guildId).catch(() => null);
     if (!guild) {
         console.log("❌ Serveur introuvable pour le rappel bump.");
         return;
     }
-
     const bumpChannelId = getSetting({ guildId, key: "bump_channel_id" });
     const bumpRoleId = getSetting({ guildId, key: "bump_role_id" });
-
     if (!bumpChannelId || !bumpRoleId) {
         console.log("📭 Rappel bump non configuré : salon ou rôle manquant.");
         return;
     }
-
     const channel = await guild.channels.fetch(bumpChannelId).catch(() => null);
     if (!channel || !channel.isTextBased()) {
         console.log("❌ Salon bump introuvable ou invalide.");
         return;
     }
-
     const role = await guild.roles.fetch(bumpRoleId).catch(() => null);
     if (!role) {
         console.log("❌ Rôle bump introuvable.");
         return;
     }
-
     const embed = new EmbedBuilder()
         .setTitle("╭━━━ 🔔 Bump BDL ━━━╮")
         .setDescription("⏰ **C’est l’heure de bump le serveur !**\n\nUtilise la commande de bump pour aider le serveur à gagner en visibilité.\n✦ Merci aux soldats du référencement ✦")
         .setColor(0x9b59b6)
         .setTimestamp();
-
     await channel.send({ content: `${role}`, embeds: [embed] });
     console.log("✅ Rappel bump envoyé.");
 }
-
 async function handleDisboardBumpMessage(message) {
     if (!message.guild) return;
     if (message.author.id !== "302050872383242240") return;
-
     const rawContent = [
         message.content ?? "",
         ...(message.embeds?.map(embed =>
             [embed.title ?? "", embed.description ?? "", ...(embed.fields ?? []).map(f => `${f.name} ${f.value}`)].join(" ")
         ) ?? [])
     ].join(" ").toLowerCase();
-
     const isSuccessfulBump =
         rawContent.includes("bump done") ||
         rawContent.includes("bumped") ||
         rawContent.includes("serveur bump") ||
         rawContent.includes("server bumped");
-
     if (!isSuccessfulBump) return;
-
     const nextBumpAt = new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString();
     setSetting({ guildId: message.guild.id, key: "next_bump_at", value: nextBumpAt });
     console.log(`✅ Bump détecté. Prochain rappel programmé à ${nextBumpAt}.`);
 }
-
 async function checkScheduledBumpReminder(client, guildId) {
     if (!guildId) return;
     const nextBumpAt = getSetting({ guildId, key: "next_bump_at" });
     if (!nextBumpAt) return;
-
     const nextDate = new Date(nextBumpAt);
     if (Number.isNaN(nextDate.getTime()) || nextDate > new Date()) return;
-
     await sendBumpReminder(client, guildId);
     setSetting({ guildId, key: "next_bump_at", value: "" });
 }
-
 /* =========================
    COMMANDES SLASH
 ========================= */
-
 async function handleCommandInteraction(interaction) {
     if (!interaction.guild) {
         await replyError(interaction, "Cette commande ne fonctionne que dans un serveur.");
         return;
     }
-
     // /ping
     if (interaction.commandName === "ping") {
         await interaction.reply("Pong 🏓 Le bot BDL fonctionne !");
         return;
     }
-
     // ===== POINTS =====
     if (interaction.commandName === "points") {
         const subcommand = interaction.options.getSubcommand();
-
         if (subcommand === "ajouter") {
             if (!isStaff(interaction.member)) {
                 await replyError(interaction, "Tu n’as pas la permission d’ajouter des points.");
@@ -941,7 +806,6 @@ async function handleCommandInteraction(interaction) {
             const nombre = interaction.options.getInteger("nombre");
             const raison = interaction.options.getString("raison");
             const secret = interaction.options.getBoolean("secret") ?? false;
-
             addPoints({
                 guildId: interaction.guildId,
                 userId: membre.id,
@@ -950,7 +814,6 @@ async function handleCommandInteraction(interaction) {
                 isSecret: secret,
                 createdBy: interaction.user.id
             });
-
             const totalPublic = getUserTotalPoints({ guildId: interaction.guildId, userId: membre.id, includeSecret: false });
             await interaction.reply(
                 secret
@@ -959,7 +822,6 @@ async function handleCommandInteraction(interaction) {
             );
             return;
         }
-
         if (subcommand === "retirer") {
             if (!isStaff(interaction.member)) {
                 await replyError(interaction, "Tu n’as pas la permission de retirer des points.");
@@ -969,7 +831,6 @@ async function handleCommandInteraction(interaction) {
             const nombre = interaction.options.getInteger("nombre");
             const raison = interaction.options.getString("raison");
             const secret = interaction.options.getBoolean("secret") ?? false;
-
             addPoints({
                 guildId: interaction.guildId,
                 userId: membre.id,
@@ -978,10 +839,8 @@ async function handleCommandInteraction(interaction) {
                 isSecret: secret,
                 createdBy: interaction.user.id
             });
-
             const totalPublic = getUserTotalPoints({ guildId: interaction.guildId, userId: membre.id, includeSecret: false });
             const totalAvecSecrets = getUserTotalPoints({ guildId: interaction.guildId, userId: membre.id, includeSecret: true });
-
             await interaction.reply(
                 secret
                     ? `🕵️ **-${nombre} point(s) secret(s)** retirés à ${membre}.\nRaison : ${raison}\nTotal avec secrets : **${totalAvecSecrets} point(s)**.`
@@ -989,16 +848,13 @@ async function handleCommandInteraction(interaction) {
             );
             return;
         }
-
         if (subcommand === "voir") {
             const membre = interaction.options.getUser("membre") ?? interaction.user;
             const inclureSecrets = interaction.options.getBoolean("inclure_secrets") ?? false;
-
             if (inclureSecrets && !isStaff(interaction.member)) {
                 await replyError(interaction, "Seul le staff peut voir les points secrets.");
                 return;
             }
-
             const total = getUserTotalPoints({ guildId: interaction.guildId, userId: membre.id, includeSecret: inclureSecrets });
             await interaction.reply({
                 content: `📊 ${membre} a **${total} point(s)**${inclureSecrets ? " (secrets inclus)" : ""}.`,
@@ -1006,20 +862,17 @@ async function handleCommandInteraction(interaction) {
             });
             return;
         }
-
         if (subcommand === "classement") {
             const inclureSecrets = interaction.options.getBoolean("inclure_secrets") ?? false;
             if (inclureSecrets && !isStaff(interaction.member)) {
                 await replyError(interaction, "Seul le staff peut voir le classement avec les points secrets.");
                 return;
             }
-
             const leaderboard = getLeaderboard({ guildId: interaction.guildId, includeSecret: inclureSecrets, limit: 10 });
             if (leaderboard.length === 0) {
                 await interaction.reply("📊 Aucun point n’a encore été attribué.");
                 return;
             }
-
             const lines = leaderboard.map((row, index) => `**${index + 1}.** <@${row.user_id}> — **${row.total} point(s)**`);
             await interaction.reply({
                 content: `🏆 **Classement BDL**${inclureSecrets ? " (secrets inclus)" : ""}\n\n${lines.join("\n")}`,
@@ -1027,19 +880,15 @@ async function handleCommandInteraction(interaction) {
             });
             return;
         }
-
         if (subcommand === "historique") {
             const membre = interaction.options.getUser("membre") ?? interaction.user;
             const inclureSecrets = interaction.options.getBoolean("secrets") ?? false;
-
             if (inclureSecrets && !isStaff(interaction.member)) {
                 await replyError(interaction, "Seul le staff peut voir l’historique avec les points secrets.");
                 return;
             }
-
             const history = getUserPointsHistory({ guildId: interaction.guildId, userId: membre.id, includeSecret: inclureSecrets, limit: 15 });
             const total = getUserTotalPoints({ guildId: interaction.guildId, userId: membre.id, includeSecret: inclureSecrets });
-
             if (history.length === 0) {
                 await interaction.reply({
                     content: `📭 Aucun point trouvé pour ${membre}.`,
@@ -1047,33 +896,27 @@ async function handleCommandInteraction(interaction) {
                 });
                 return;
             }
-
             const lines = history.map(point => {
                 const secretLabel = point.is_secret === 1 ? " 🕵️" : "";
                 return `**${point.amount > 0 ? "+" : ""}${point.amount}**${secretLabel} — ${point.created_at}\n> ${truncate(point.reason, 180)}`;
             });
-
             const embed = new EmbedBuilder()
                 .setTitle(`📜 Historique des points — ${membre.username}`)
                 .setDescription(`Total : **${total} point(s)**${inclureSecrets ? " (secrets inclus)" : ""}`)
                 .addFields({ name: "Dernières entrées", value: truncate(lines.join("\n\n"), 3500) })
                 .setFooter({ text: "Historique limité aux 15 dernières entrées." })
                 .setTimestamp();
-
             await interaction.reply({ embeds: [embed], flags: inclureSecrets ? MessageFlags.Ephemeral : undefined });
             return;
         }
     }
-
     // ===== RUMEURS =====
     if (interaction.commandName === "rumeur") {
         const subcommand = interaction.options.getSubcommand();
-
         if (subcommand === "proposer") {
             const texte = interaction.options.getString("texte");
             const cible = interaction.options.getUser("cible");
             const anonyme = interaction.options.getBoolean("anonyme") ?? false;
-
             const rumorId = addRumor({
                 guildId: interaction.guildId,
                 authorId: interaction.user.id,
@@ -1081,7 +924,6 @@ async function handleCommandInteraction(interaction) {
                 targetUserId: cible?.id,
                 anonymous: anonyme
             });
-
             const staffChannelId = getSetting({ guildId: interaction.guildId, key: "rumors_staff_channel_id" });
             if (staffChannelId) {
                 const staffChannel = await interaction.guild.channels.fetch(staffChannelId).catch(() => null);
@@ -1100,14 +942,12 @@ async function handleCommandInteraction(interaction) {
                     await staffChannel.send({ embeds: [embed], components: [createRumorButtons(rumorId)] });
                 }
             }
-
             await interaction.reply({
                 content: `✅ Ta rumeur a été envoyée au staff ! (ID: #${rumorId})`,
                 flags: MessageFlags.Ephemeral
             });
             return;
         }
-
         if (subcommand === "liste") {
             if (!isStaff(interaction.member)) {
                 await replyError(interaction, "Seul le staff peut lister les rumeurs.");
@@ -1123,7 +963,6 @@ async function handleCommandInteraction(interaction) {
             await interaction.reply({ content: `📜 **Rumeurs (${status})**\n\n${lines.join("\n\n")}`, flags: MessageFlags.Ephemeral });
             return;
         }
-
         if (subcommand === "approuver") {
             if (!isStaff(interaction.member)) {
                 await replyError(interaction, "Seul le staff peut approuver les rumeurs.");
@@ -1143,7 +982,6 @@ async function handleCommandInteraction(interaction) {
             await interaction.reply({ content: `✅ Rumeur #${rumorId} **approuvée**.`, flags: MessageFlags.Ephemeral });
             return;
         }
-
         if (subcommand === "refuser") {
             if (!isStaff(interaction.member)) {
                 await replyError(interaction, "Seul le staff peut refuser les rumeurs.");
@@ -1166,11 +1004,9 @@ async function handleCommandInteraction(interaction) {
             return;
         }
     }
-
     // ===== GAZETTE =====
     if (interaction.commandName === "gazette") {
         const subcommand = interaction.options.getSubcommand();
-
         if (subcommand === "brouillon") {
             if (!isStaff(interaction.member)) {
                 await replyError(interaction, "Seul le staff peut générer un brouillon.");
@@ -1183,7 +1019,6 @@ async function handleCommandInteraction(interaction) {
             const pendingQuests = getPendingQuestSubmissionCount();
             const topMember = leaderboard[0] || { user_id: "Aucun", total: 0 };
             const pointsBannerUrl = getPointsBannerUrl(topMember.total);
-
             const embed = new EmbedBuilder()
                 .setTitle("📰 **Brouillon de Gazette BDL**")
                 .setDescription("Base automatique pour la Gazette de cette semaine.")
@@ -1197,48 +1032,39 @@ async function handleCommandInteraction(interaction) {
                 )
                 .setFooter({ text: "Utilise /gazette publier pour finaliser." })
                 .setTimestamp();
-
-            await interaction.reply({ embeds: [embed], ephemeral: true });
+            await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
             return;
         }
-
         if (subcommand === "publier") {
             if (!isStaff(interaction.member)) {
                 await replyError(interaction, "Seul le staff peut publier la Gazette.");
                 return;
             }
-
             const titre = interaction.options.getString("titre");
             const pepites = formatMultilineInput(interaction.options.getString("pepites") || "");
             const stats = formatMultilineInput(interaction.options.getString("stats") || "");
             const rumeur = formatMultilineInput(interaction.options.getString("rumeur") || "");
             const exploit = formatMultilineInput(interaction.options.getString("exploit") || "");
             const nominations = formatMultilineInput(interaction.options.getString("nominations") || "");
-
             const banniere = interaction.options.getAttachment("banniere");
             const imagePepites = interaction.options.getAttachment("image_pepites");
             const imageStats = interaction.options.getAttachment("image_stats");
             const imageRumeur = interaction.options.getAttachment("image_rumeur");
             const imageExploit = interaction.options.getAttachment("image_exploit");
             const imageNominations = interaction.options.getAttachment("image_nominations");
-
             const gazetteChannelId = getSetting({ guildId: interaction.guildId, key: "gazette_channel_id" });
             if (!gazetteChannelId) {
                 await replyError(interaction, "Aucun salon Gazette configuré. Utilise `/config salon`.");
                 return;
             }
-
             const channel = await interaction.guild.channels.fetch(gazetteChannelId).catch(() => null);
             if (!channel?.isTextBased()) {
                 await replyError(interaction, "Salon Gazette introuvable.");
                 return;
             }
-
             const leaderboard = getLeaderboard({ guildId: interaction.guildId, includeSecret: false, limit: 3 });
             const pointsBannerUrl = getPointsBannerUrl(leaderboard[0]?.total || 0);
-
             const embeds = [];
-
             // 1. PREMIER EMBED : Titre + bannière (TOUJOURS en premier)
             const mainEmbed = new EmbedBuilder()
                 .setTitle(`📰 **${titre}**`)
@@ -1255,7 +1081,6 @@ async function handleCommandInteraction(interaction) {
                 .setFooter({ text: "Une édition signée BDL Staff" })
                 .setTimestamp();
             embeds.push(mainEmbed);
-
             // 2. Embed Pépites
             if (pepites.trim()) {
                 const embed = new EmbedBuilder()
@@ -1265,7 +1090,6 @@ async function handleCommandInteraction(interaction) {
                 if (imagePepites) embed.setImage(imagePepites.url);
                 embeds.push(embed);
             }
-
             // 3. Embed Stats
             if (stats.trim()) {
                 const embed = new EmbedBuilder()
@@ -1275,7 +1099,6 @@ async function handleCommandInteraction(interaction) {
                 if (imageStats) embed.setImage(imageStats.url);
                 embeds.push(embed);
             }
-
             // 4. Embed Rumeur
             if (rumeur.trim()) {
                 const embed = new EmbedBuilder()
@@ -1285,7 +1108,6 @@ async function handleCommandInteraction(interaction) {
                 if (imageRumeur) embed.setImage(imageRumeur.url);
                 embeds.push(embed);
             }
-
             // 5. Embed Exploit
             if (exploit.trim()) {
                 const embed = new EmbedBuilder()
@@ -1295,7 +1117,6 @@ async function handleCommandInteraction(interaction) {
                 if (imageExploit) embed.setImage(imageExploit.url);
                 embeds.push(embed);
             }
-
             // 6. Embed Nominations
             if (nominations.trim()) {
                 const embed = new EmbedBuilder()
@@ -1305,7 +1126,6 @@ async function handleCommandInteraction(interaction) {
                 if (imageNominations) embed.setImage(imageNominations.url);
                 embeds.push(embed);
             }
-
             // 7. Embed Classement (TOUJOURS affiché)
             const classementEmbed = new EmbedBuilder()
                 .setTitle("👑 Classement Points BDL")
@@ -1316,17 +1136,14 @@ async function handleCommandInteraction(interaction) {
                 )
                 .setColor(0x9b59b6);
             embeds.push(classementEmbed);
-
             await channel.send({ embeds: embeds });
             await interaction.reply({ content: `✅ Gazette publiée dans ${channel} !`, flags: MessageFlags.Ephemeral });
             return;
         }
     }
-
     // ===== CONFIG =====
     if (interaction.commandName === "config") {
         const subcommand = interaction.options.getSubcommand();
-
         if (subcommand === "salon") {
             if (!isStaff(interaction.member)) {
                 await replyError(interaction, "Seul le staff peut configurer les salons.");
@@ -1338,7 +1155,6 @@ async function handleCommandInteraction(interaction) {
             await interaction.reply({ content: `✅ Salon **${salon.name}** configuré pour **${type}**.`, flags: MessageFlags.Ephemeral });
             return;
         }
-
         if (subcommand === "role_staff") {
             if (!isStaff(interaction.member)) {
                 await replyError(interaction, "Seul le staff peut configurer le rôle staff.");
@@ -1349,7 +1165,6 @@ async function handleCommandInteraction(interaction) {
             await interaction.reply({ content: `✅ Rôle **${role.name}** configuré comme rôle staff.`, flags: MessageFlags.Ephemeral });
             return;
         }
-
         if (subcommand === "role_bump") {
             if (!isStaff(interaction.member)) {
                 await replyError(interaction, "Seul le staff peut configurer le rôle bump.");
@@ -1360,18 +1175,16 @@ async function handleCommandInteraction(interaction) {
             await interaction.reply({ content: `✅ Rôle **${role.name}** configuré pour les rappels de bump.`, flags: MessageFlags.Ephemeral });
             return;
         }
-
-        if (subcommand === "role_grand_maitre") {
+        if (subcommand === "role_mini_maitre") {
             if (!isStaff(interaction.member)) {
                 await replyError(interaction, "Seul le staff peut configurer le rôle Mini Maître.");
                 return;
             }
             const role = interaction.options.getRole("role");
-            setSetting({ guildId: interaction.guildId, key: "grand_master_role_id", value: role.id });
+            setSetting({ guildId: interaction.guildId, key: "mini_master_role_id", value: role.id });
             await interaction.reply({ content: `✅ Rôle **${role.name}** configuré comme rôle Mini Maître.`, flags: MessageFlags.Ephemeral });
             return;
         }
-
         if (subcommand === "voir") {
             const settings = getAllSettings({ guildId: interaction.guildId });
             if (settings.length === 0) {
@@ -1383,11 +1196,9 @@ async function handleCommandInteraction(interaction) {
             return;
         }
     }
-
     // ===== QUÊTES =====
     if (interaction.commandName === "quete") {
         const subcommand = interaction.options.getSubcommand();
-
         if (subcommand === "publier") {
             if (!isStaff(interaction.member)) {
                 await replyError(interaction, "Seul le staff peut publier des quêtes.");
@@ -1399,7 +1210,6 @@ async function handleCommandInteraction(interaction) {
             const role = interaction.options.getRole("role");
             const joursRole = interaction.options.getInteger("jours_role") ?? 7;
             const image = interaction.options.getAttachment("image");
-
             const questId = addQuest({
                 guildId: interaction.guildId,
                 title: titre,
@@ -1409,7 +1219,6 @@ async function handleCommandInteraction(interaction) {
                 rewardRoleDays: joursRole,
                 createdBy: interaction.user.id
             });
-
             const questsChannelId = getSetting({ guildId: interaction.guildId, key: "quests_channel_id" });
             if (questsChannelId) {
                 const channel = await interaction.guild.channels.fetch(questsChannelId).catch(() => null);
@@ -1431,7 +1240,6 @@ async function handleCommandInteraction(interaction) {
             await interaction.reply({ content: `✅ Quête **${titre}** publiée ! (ID: #${questId})`, flags: MessageFlags.Ephemeral });
             return;
         }
-
         if (subcommand === "liste") {
             const quests = getActiveQuests({ guildId: interaction.guildId, limit: 10 });
             if (quests.length === 0) {
@@ -1442,14 +1250,12 @@ async function handleCommandInteraction(interaction) {
             await interaction.reply(`🗺️ **Quêtes actives**\n\n${lines.join("\n\n")}`);
             return;
         }
-
         if (subcommand === "valider") {
             const questId = interaction.options.getInteger("id");
             const preuve = formatMultilineInput(interaction.options.getString("preuve"));
             const photo = interaction.options.getAttachment("photo");
             const membreMentionne = interaction.options.getUser("membre_mentionne");
             const lien = interaction.options.getString("lien") ?? null;
-
             const quest = getQuestById({ guildId: interaction.guildId, questId });
             if (!quest) {
                 await replyError(interaction, `Quête #${questId} introuvable.`);
@@ -1459,7 +1265,6 @@ async function handleCommandInteraction(interaction) {
                 await replyError(interaction, `La quête **${quest.title}** n’est plus active.`);
                 return;
             }
-
             try {
                 addQuestSubmission({
                     guildId: interaction.guildId,
@@ -1470,22 +1275,18 @@ async function handleCommandInteraction(interaction) {
                     mentionedUserId: membreMentionne?.id,
                     proofLink: lien
                 });
-
                 const allSubmissions = getQuestSubmissionsByStatus({
                     guildId: interaction.guildId,
                     status: "pending",
                     limit: 50
                 }) || [];
-
                 const submission = allSubmissions
                     .filter(s => s.user_id === interaction.user.id && s.quest_id === questId)
                     .sort((a, b) => b.id - a.id)[0];
-
                 if (!submission) {
                     await replyError(interaction, "Impossible de récupérer l'ID de la soumission.");
                     return;
                 }
-
                 const staffChannelId = getSetting({ guildId: interaction.guildId, key: "rumors_staff_channel_id" });
                 if (staffChannelId) {
                     const staffChannel = await interaction.guild.channels.fetch(staffChannelId).catch(() => null);
@@ -1503,16 +1304,13 @@ async function handleCommandInteraction(interaction) {
                             )
                             .setFooter({ text: "Clique sur un bouton ou utilise /quete approuver/refuser" })
                             .setTimestamp();
-
                         if (photo) embed.setImage(photo.url);
-
                         await staffChannel.send({
                             embeds: [embed],
                             components: [createQuestSubmissionButtons(submission.id)]
                         }).catch(console.error);
                     }
                 }
-
                 await interaction.reply({
                     content: `✅ Ta validation pour **${quest.title}** a été envoyée au staff ! (ID: #${submission.id})`,
                     flags: MessageFlags.Ephemeral
@@ -1522,7 +1320,6 @@ async function handleCommandInteraction(interaction) {
             }
             return;
         }
-
         if (subcommand === "submissions") {
             if (!isStaff(interaction.member)) {
                 await replyError(interaction, "Seul le staff peut voir les validations.");
@@ -1538,7 +1335,6 @@ async function handleCommandInteraction(interaction) {
             await interaction.reply({ content: `📜 **Validations (${status})**\n\n${lines.join("\n\n")}`, flags: MessageFlags.Ephemeral });
             return;
         }
-
         if (subcommand === "approuver") {
             if (!isStaff(interaction.member)) {
                 await replyError(interaction, "Seul le staff peut approuver les validations.");
@@ -1550,14 +1346,12 @@ async function handleCommandInteraction(interaction) {
                 await replyError(interaction, `Validation #${submissionId} introuvable.`);
                 return;
             }
-
             updateQuestSubmissionStatus({
                 guildId: interaction.guildId,
                 submissionId,
                 status: "approved",
                 reviewedBy: interaction.user.id
             });
-
             addPoints({
                 guildId: interaction.guildId,
                 userId: submission.user_id,
@@ -1566,7 +1360,6 @@ async function handleCommandInteraction(interaction) {
                 isSecret: false,
                 createdBy: interaction.user.id
             });
-
             if (submission.reward_role_id) {
                 const member = await interaction.guild.members.fetch(submission.user_id).catch(() => null);
                 if (!member) {
@@ -1584,11 +1377,9 @@ async function handleCommandInteraction(interaction) {
                     });
                 }
             }
-
             await interaction.reply({ content: `✅ Validation #${submissionId} **approuvée**. Points et rôle attribués.`, flags: MessageFlags.Ephemeral });
             return;
         }
-
         if (subcommand === "refuser") {
             if (!isStaff(interaction.member)) {
                 await replyError(interaction, "Seul le staff peut refuser les validations.");
@@ -1610,7 +1401,6 @@ async function handleCommandInteraction(interaction) {
             await interaction.reply({ content: `❌ Validation #${submissionId} **refusée**. Raison: ${raison}`, flags: MessageFlags.Ephemeral });
             return;
         }
-
         if (subcommand === "fermer") {
             if (!isStaff(interaction.member)) {
                 await replyError(interaction, "Seul le staff peut fermer les quêtes.");
@@ -1626,11 +1416,9 @@ async function handleCommandInteraction(interaction) {
             return;
         }
     }
-
     // ===== RÔLES TEMPORAIRES =====
     if (interaction.commandName === "role") {
         const subcommand = interaction.options.getSubcommand();
-
         if (subcommand === "temporaire") {
             if (!isStaff(interaction.member)) {
                 await replyError(interaction, "Seul le staff peut donner des rôles temporaires.");
@@ -1640,17 +1428,14 @@ async function handleCommandInteraction(interaction) {
             const role = interaction.options.getRole("role");
             const jours = interaction.options.getInteger("jours");
             const raison = interaction.options.getString("raison") ?? "Aucune raison";
-
             const member = await interaction.guild.members.fetch(membre.id).catch(() => null);
             if (!member) {
                 await replyError(interaction, "Membre introuvable.");
                 return;
             }
-
             await member.roles.add(role.id, `Rôle temporaire : ${raison}`).catch(async () => {
                 await replyError(interaction, "Impossible d'ajouter le rôle. Vérifie les permissions du bot.");
             });
-
             const expiresAt = addDays(new Date(), jours);
             addTemporaryRole({
                 guildId: interaction.guildId,
@@ -1660,14 +1445,12 @@ async function handleCommandInteraction(interaction) {
                 expiresAt: formatDateForDatabase(expiresAt),
                 createdBy: interaction.user.id
             });
-
             await interaction.reply({
                 content: `✅ Rôle **${role.name}** donné à ${membre} pour **${jours} jour(s)**.\nRaison: ${raison}`,
                 flags: MessageFlags.Ephemeral
             });
             return;
         }
-
         if (subcommand === "liste") {
             const tempRoles = getActiveTemporaryRoles({ guildId: interaction.guildId, limit: 20 });
             if (tempRoles.length === 0) {
@@ -1683,11 +1466,9 @@ async function handleCommandInteraction(interaction) {
             return;
         }
     }
-
     // ===== MEMBRE MYSTÈRE =====
     if (interaction.commandName === "mystere") {
         const subcommand = interaction.options.getSubcommand();
-
         if (subcommand === "set") {
             if (!isStaff(interaction.member)) {
                 await replyError(interaction, "Seul le staff peut définir le Membre Mystère.");
@@ -1696,14 +1477,12 @@ async function handleCommandInteraction(interaction) {
             const membre = interaction.options.getUser("membre");
             const semaine = interaction.options.getString("semaine") ?? getWeekKey();
             const image = interaction.options.getAttachment("image");
-
             const gameId = createMysteryGame({
                 guildId: interaction.guildId,
                 targetUserId: membre.id,
                 weekKey: semaine,
                 createdBy: interaction.user.id
             });
-
             const mysteryChannelId = getSetting({ guildId: interaction.guildId, key: "mystery_channel_id" });
             if (mysteryChannelId) {
                 const channel = await interaction.guild.channels.fetch(mysteryChannelId).catch(() => null);
@@ -1720,7 +1499,6 @@ async function handleCommandInteraction(interaction) {
             await interaction.reply({ content: `✅ Membre Mystère défini: **${membre}** (semaine: ${semaine}, ID: #${gameId}).`, flags: MessageFlags.Ephemeral });
             return;
         }
-
         if (subcommand === "indice") {
             if (!isStaff(interaction.member)) {
                 await replyError(interaction, "Seul le staff peut ajouter des indices.");
@@ -1734,7 +1512,6 @@ async function handleCommandInteraction(interaction) {
             const numero = interaction.options.getInteger("numero");
             const texte = formatMultilineInput(interaction.options.getString("texte"));
             const publier = interaction.options.getBoolean("publier") ?? false;
-
             addMysteryHint({ guildId: interaction.guildId, gameId: game.id, hintNumber: numero, content: texte });
             if (publier) {
                 markMysteryHintPublished({ guildId: interaction.guildId, gameId: game.id, hintNumber: numero });
@@ -1754,7 +1531,6 @@ async function handleCommandInteraction(interaction) {
             await interaction.reply({ content: `✅ Indice #${numero} ${publier ? "publié" : "enregistré"}.`, flags: MessageFlags.Ephemeral });
             return;
         }
-
         if (subcommand === "guess") {
             const game = getActiveMysteryGame({ guildId: interaction.guildId });
             if (!game) {
@@ -1782,7 +1558,6 @@ async function handleCommandInteraction(interaction) {
             });
             return;
         }
-
         if (subcommand === "reveal") {
             if (!isStaff(interaction.member)) {
                 await replyError(interaction, "Seul le staff peut révéler le Membre Mystère.");
@@ -1795,7 +1570,6 @@ async function handleCommandInteraction(interaction) {
             }
             const firstCorrectGuess = getFirstCorrectMysteryGuess({ guildId: interaction.guildId, gameId: game.id });
             revealMysteryGame({ guildId: interaction.guildId, gameId: game.id, winnerUserId: firstCorrectGuess?.user_id });
-
             const mysteryChannelId = getSetting({ guildId: interaction.guildId, key: "mystery_channel_id" });
             if (mysteryChannelId) {
                 const channel = await interaction.guild.channels.fetch(mysteryChannelId).catch(() => null);
@@ -1826,7 +1600,6 @@ async function handleCommandInteraction(interaction) {
             await interaction.reply({ content: `✅ Membre Mystère révélé: **<@${game.target_user_id}>** !`, flags: MessageFlags.Ephemeral });
             return;
         }
-
         if (subcommand === "statut") {
             const game = getActiveMysteryGame({ guildId: interaction.guildId });
             if (!game) {
@@ -1837,7 +1610,6 @@ async function handleCommandInteraction(interaction) {
             const publishedHints = hints.filter(h => h.published === 1).length;
             const unpublishedHints = hints.filter(h => h.published === 0).length;
             const guesses = getTopCorrectMysteryGuessers({ guildId: interaction.guildId, gameId: game.id, limit: 3 });
-
             const embed = new EmbedBuilder()
                 .setTitle(`🕵️ **Membre Mystère — ${game.week_key}**`)
                 .setDescription(
@@ -1847,11 +1619,10 @@ async function handleCommandInteraction(interaction) {
                 )
                 .setColor(0xf39c12)
                 .setTimestamp();
-            await interaction.reply({ embeds: [embed], ephemeral: true });
+            await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
             return;
         }
     }
-
     // ===== DROP EVENTS =====
     if (interaction.commandName === "drop") {
         const subcommand = interaction.options.getSubcommand();
@@ -1864,7 +1635,6 @@ async function handleCommandInteraction(interaction) {
             const gagnants = interaction.options.getInteger("gagnants") ?? 5;
             const points = interaction.options.getInteger("points") ?? 1;
             const image = interaction.options.getAttachment("image");
-
             const dropId = createDropEvent({
                 guildId: interaction.guildId,
                 channelId: interaction.channelId,
@@ -1873,20 +1643,17 @@ async function handleCommandInteraction(interaction) {
                 maxWinners: gagnants,
                 createdBy: interaction.user.id
             });
-
             const embed = new EmbedBuilder()
                 .setTitle(`🎁 **${titre}**`)
                 .setDescription(`Les **${gagnants} premiers** à cliquer gagnent **+${points} point(s)** !\n⚠️ **Un seul clic par personne !**`)
                 .setColor(0xe74c3c)
                 .setTimestamp();
             applyAttachmentImage(embed, image);
-
             const message = await interaction.reply({ embeds: [embed], components: [createDropButton(dropId)], fetchReply: true });
             setDropMessageId({ guildId: interaction.guildId, dropId, messageId: message.id });
             return;
         }
     }
-
     // ===== MINI MAÎTRE =====
     if (interaction.commandName === "grandmaitre") {
         const subcommand = interaction.options.getSubcommand();
@@ -1897,7 +1664,6 @@ async function handleCommandInteraction(interaction) {
             }
             const mois = interaction.options.getInteger("mois") ?? new Date().getMonth() + 1;
             const annee = interaction.options.getInteger("annee") ?? new Date().getFullYear();
-
             const leaderboard = getMonthlyLeaderboard({ guildId: interaction.guildId, year: annee, month: mois, includeSecret: true, limit: 10 });
             if (leaderboard.length === 0) {
                 await interaction.reply({
@@ -1913,7 +1679,6 @@ async function handleCommandInteraction(interaction) {
             });
             return;
         }
-
         if (subcommand === "couronner") {
             if (!isStaff(interaction.member)) {
                 await replyError(interaction, "Seul le staff peut couronner le Mini Maître.");
@@ -1926,9 +1691,9 @@ async function handleCommandInteraction(interaction) {
                 await replyError(interaction, `Aucun point pour ${new Date(annee, mois - 1).toLocaleDateString("fr-FR", { month: "long", year: "numeric" })}.`);
                 return;
             }
-            const grandMasterRoleId = getSetting({ guildId: interaction.guildId, key: "grand_master_role_id" });
-            if (!grandMasterRoleId) {
-                await replyError(interaction, "Aucun rôle Mini Maître configuré. Utilise `/config role_grand_maitre`.");
+            const miniMasterRoleId = getSetting({ guildId: interaction.guildId, key: "mini_master_role_id" });
+            if (!miniMasterRoleId) {
+                await replyError(interaction, "Aucun rôle Mini Maître configuré. Utilise `/config role_mini_maitre`.");
                 return;
             }
             const member = await interaction.guild.members.fetch(leaderboard[0].user_id).catch(() => null);
@@ -1936,7 +1701,7 @@ async function handleCommandInteraction(interaction) {
                 await replyError(interaction, "Membre introuvable.");
                 return;
             }
-            await member.roles.add(grandMasterRoleId, `Mini Maître — ${new Date(annee, mois - 1).toLocaleDateString("fr-FR", { month: "long", year: "numeric" })}`).catch(async () => {
+            await member.roles.add(miniMasterRoleId, `Mini Maître — ${new Date(annee, mois - 1).toLocaleDateString("fr-FR", { month: "long", year: "numeric" })}`).catch(async () => {
                 await replyError(interaction, "Impossible de donner le rôle. Vérifie les permissions du bot.");
             });
             await interaction.reply({
@@ -1946,7 +1711,6 @@ async function handleCommandInteraction(interaction) {
             return;
         }
     }
-
     // ===== PROFIL =====
     if (interaction.commandName === "profil") {
         const membre = interaction.options.getUser("membre") ?? interaction.user;
@@ -1960,7 +1724,6 @@ async function handleCommandInteraction(interaction) {
         const approvedQuests = getUserApprovedQuestCount({ guildId: interaction.guildId, userId: membre.id });
         const rank = getUserRank({ guildId: interaction.guildId, userId: membre.id, includeSecret: secrets });
         const bannerUrl = getPointsBannerUrl(totalPoints);
-
         const embed = new EmbedBuilder()
             .setTitle(`📜 Profil BDL — ${membre.username}`)
             .setDescription(`**Points** : **${totalPoints}**${secrets ? " (secrets inclus)" : ""}`)
@@ -1976,11 +1739,9 @@ async function handleCommandInteraction(interaction) {
         await interaction.reply({ embeds: [embed] });
         return;
     }
-
     // ===== BOUTIQUE =====
     if (interaction.commandName === "boutique") {
         const subcommand = interaction.options.getSubcommand();
-
         if (subcommand === "voir") {
             const embed = new EmbedBuilder()
                 .setTitle("🛒 **Boutique de points BDL**")
@@ -1991,7 +1752,6 @@ async function handleCommandInteraction(interaction) {
             await interaction.reply({ embeds: [embed] });
             return;
         }
-
         if (subcommand === "acheter") {
             const itemKey = interaction.options.getString("item");
             const note = interaction.options.getString("note") ?? null;
@@ -2044,7 +1804,6 @@ async function handleCommandInteraction(interaction) {
             });
             return;
         }
-
         if (subcommand === "demandes") {
             if (!isStaff(interaction.member)) {
                 await replyError(interaction, "Seul le staff peut voir les demandes.");
@@ -2060,7 +1819,6 @@ async function handleCommandInteraction(interaction) {
             await interaction.reply({ content: `🛒 **Demandes (${status})**\n\n${lines.join("\n\n")}`, flags: MessageFlags.Ephemeral });
             return;
         }
-
         if (subcommand === "approuver") {
             if (!isStaff(interaction.member)) {
                 await replyError(interaction, "Seul le staff peut approuver les achats.");
@@ -2109,7 +1867,6 @@ async function handleCommandInteraction(interaction) {
             });
             return;
         }
-
         if (subcommand === "refuser") {
             if (!isStaff(interaction.member)) {
                 await replyError(interaction, "Seul le staff peut refuser les achats.");
@@ -2132,7 +1889,6 @@ async function handleCommandInteraction(interaction) {
             return;
         }
     }
-
     // ===== BACKUP =====
     if (interaction.commandName === "backup") {
         const subcommand = interaction.options.getSubcommand();
@@ -2176,11 +1932,10 @@ async function handleCommandInteraction(interaction) {
                     { name: "⏳ Quêtes en attente", value: `${getPendingQuestSubmissionCount()}`, inline: true }
                 )
                 .setTimestamp();
-            await interaction.reply({ embeds: [embed], ephemeral: true });
+            await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
             return;
         }
     }
-
     // ===== ARCHIVE =====
     if (interaction.commandName === "archive") {
         const subcommand = interaction.options.getSubcommand();
@@ -2297,17 +2052,13 @@ async function handleCommandInteraction(interaction) {
         }
     }
 }
-
 /* =========================
    ÉCOUTEURS D'ÉVÉNEMENTS
 ========================= */
-
 client.once(Events.ClientReady, (c) => {
     console.log(`✅ Bot connecté en tant que ${c.user.tag} (ID: ${c.user.id})`);
-
     // Nettoyage initial des rôles expirés
     cleanupExpiredTemporaryRoles(c).catch(console.error);
-
     // Tâches planifiées
     cron.schedule("*/10 * * * *", () => cleanupExpiredTemporaryRoles(c).catch(console.error));
     cron.schedule("0 18 * * 3,5", () => {
@@ -2323,7 +2074,6 @@ client.once(Events.ClientReady, (c) => {
         c.guilds.cache.forEach(g => checkScheduledBumpReminder(c, g.id).catch(console.error));
     });
 });
-
 client.on(Events.InteractionCreate, async (interaction) => {
     if (!interaction.guild) {
         await replyError(interaction, "Cette commande ne fonctionne que dans un serveur.");
@@ -2345,7 +2095,6 @@ client.on(Events.InteractionCreate, async (interaction) => {
         }
     }
 });
-
 client.on(Events.MessageCreate, async (message) => {
     try {
         await handleDisboardBumpMessage(message);
@@ -2353,6 +2102,5 @@ client.on(Events.MessageCreate, async (message) => {
         console.error("Erreur dans le handler de message :", error);
     }
 });
-
 // Connexion du bot
 client.login(process.env.DISCORD_TOKEN).catch(console.error);
