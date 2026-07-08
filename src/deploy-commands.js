@@ -362,7 +362,7 @@ const commands = [
 
   // ===== MINI MAÎTRE =====
   {
-    name: 'grandmaitre',
+    name: 'minimaitre',
     description: 'Gère le Mini Maître.',
     options: [
       {
