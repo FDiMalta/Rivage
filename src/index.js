@@ -157,37 +157,37 @@ function applyAttachmentImage(embed, attachment) {
 const SHOP_ITEMS = {
     emoji_personnalise: {
         name: "🎨 Emoji personnalisé sur le serveur",
-        price: 10,
+        price: 50,
         description: "Demande l'ajout d'un emoji personnalisé sur le serveur."
     },
     commande_personnalisee: {
         name: "💻 Commande personnalisée",
-        price: 20,
+        price: 60,
         description: "Crée une commande slash personnalisée pour le bot."
     },
     xp_boost: {
         name: "⚡ Boost d'XP",
-        price: 5,
+        price: 15,
         description: "Obtiens +10 XP pour ton profil."
     },
     nude_colo: {
-        name: "📸 Nude de colo (fausse)",
-        price: 15,
-        description: "Ajoute une fausse photo de 'nude de colo' à ton profil."
+        name: "📸 Nude de colo",
+        price: 200,
+        description: "Obtiens une incroyable nude de l'admin adoré Colo."
     },
     trophee_personnalise: {
         name: "🏆 Trophée personnalisé",
-        price: 30,
+        price: 100,
         description: "Obtiens un trophée personnalisé unique. **Limité à 1 par personne.**"
     },
     theme_gazette: {
         name: "📰 Thème de Gazette",
-        price: 10,
+        price: 30,
         description: "Propose le thème principal de la prochaine Gazette."
     },
     film_soiree: {
         name: "🎬 Choisir le film des soirées popcorn",
-        price: 8,
+        price: 20,
         description: "Choisis le film pour la prochaine soirée popcorn."
     }
 };
@@ -1248,11 +1248,11 @@ async function handleCommandInteraction(interaction) {
                         year: "numeric",
                         month: "long",
                         day: "numeric"
-                    })}**\n*La Gazette Royale qui délie les langues et lie les cœurs.*`
+                    })}**\n*La Gazette BDL.*`
                 )
                 .setColor(0x9b59b6)
                 .setImage(banniere ? banniere.url : pointsBannerUrl)
-                .setFooter({ text: "Une édition signée BDL Bot | /gazette brouillon pour un modèle" })
+                .setFooter({ text: "Une édition signée BDL Staff" })
                 .setTimestamp();
             embeds.push(mainEmbed);
 
@@ -1363,12 +1363,12 @@ async function handleCommandInteraction(interaction) {
 
         if (subcommand === "role_grand_maitre") {
             if (!isStaff(interaction.member)) {
-                await replyError(interaction, "Seul le staff peut configurer le rôle Grand Maître.");
+                await replyError(interaction, "Seul le staff peut configurer le rôle Mini Maître.");
                 return;
             }
             const role = interaction.options.getRole("role");
             setSetting({ guildId: interaction.guildId, key: "grand_master_role_id", value: role.id });
-            await interaction.reply({ content: `✅ Rôle **${role.name}** configuré comme rôle Grand Maître.`, flags: MessageFlags.Ephemeral });
+            await interaction.reply({ content: `✅ Rôle **${role.name}** configuré comme rôle Mini Maître.`, flags: MessageFlags.Ephemeral });
             return;
         }
 
@@ -1802,7 +1802,7 @@ async function handleCommandInteraction(interaction) {
                 if (channel?.isTextBased()) {
                     let description = `🎉 **Le Membre Mystère était... <@${game.target_user_id}> !**\n\n`;
                     if (firstCorrectGuess) {
-                        const winnerPoints = 10;
+                        const winnerPoints = 5;
                         addPoints({
                             guildId: interaction.guildId,
                             userId: firstCorrectGuess.user_id,
@@ -1887,12 +1887,12 @@ async function handleCommandInteraction(interaction) {
         }
     }
 
-    // ===== GRAND MAÎTRE =====
+    // ===== MINI MAÎTRE =====
     if (interaction.commandName === "grandmaitre") {
         const subcommand = interaction.options.getSubcommand();
         if (subcommand === "classement") {
             if (!isStaff(interaction.member)) {
-                await replyError(interaction, "Seul le staff peut voir le classement Grand Maître.");
+                await replyError(interaction, "Seul le staff peut voir le classement Mini Maître.");
                 return;
             }
             const mois = interaction.options.getInteger("mois") ?? new Date().getMonth() + 1;
@@ -1908,7 +1908,7 @@ async function handleCommandInteraction(interaction) {
             }
             const lines = leaderboard.map((r, i) => `**${i + 1}.** <@${r.user_id}> — **${r.total} points** (secrets inclus)`);
             await interaction.reply({
-                content: `🏆 **Classement Grand Maître — ${new Date(annee, mois - 1).toLocaleDateString("fr-FR", { month: "long", year: "numeric" })}** (secrets inclus)\n\n${lines.join("\n")}`,
+                content: `🏆 **Classement Mini Maître — ${new Date(annee, mois - 1).toLocaleDateString("fr-FR", { month: "long", year: "numeric" })}** (secrets inclus)\n\n${lines.join("\n")}`,
                 flags: MessageFlags.Ephemeral
             });
             return;
@@ -1916,7 +1916,7 @@ async function handleCommandInteraction(interaction) {
 
         if (subcommand === "couronner") {
             if (!isStaff(interaction.member)) {
-                await replyError(interaction, "Seul le staff peut couronner le Grand Maître.");
+                await replyError(interaction, "Seul le staff peut couronner le Mini Maître.");
                 return;
             }
             const mois = interaction.options.getInteger("mois") ?? new Date().getMonth() + 1;
@@ -1928,7 +1928,7 @@ async function handleCommandInteraction(interaction) {
             }
             const grandMasterRoleId = getSetting({ guildId: interaction.guildId, key: "grand_master_role_id" });
             if (!grandMasterRoleId) {
-                await replyError(interaction, "Aucun rôle Grand Maître configuré. Utilise `/config role_grand_maitre`.");
+                await replyError(interaction, "Aucun rôle Mini Maître configuré. Utilise `/config role_grand_maitre`.");
                 return;
             }
             const member = await interaction.guild.members.fetch(leaderboard[0].user_id).catch(() => null);
@@ -1936,11 +1936,11 @@ async function handleCommandInteraction(interaction) {
                 await replyError(interaction, "Membre introuvable.");
                 return;
             }
-            await member.roles.add(grandMasterRoleId, `Grand Maître — ${new Date(annee, mois - 1).toLocaleDateString("fr-FR", { month: "long", year: "numeric" })}`).catch(async () => {
+            await member.roles.add(grandMasterRoleId, `Mini Maître — ${new Date(annee, mois - 1).toLocaleDateString("fr-FR", { month: "long", year: "numeric" })}`).catch(async () => {
                 await replyError(interaction, "Impossible de donner le rôle. Vérifie les permissions du bot.");
             });
             await interaction.reply({
-                content: `👑 **<@${leaderboard[0].user_id}>** est couronné **Grand Maître** pour **${new Date(annee, mois - 1).toLocaleDateString("fr-FR", { month: "long", year: "numeric" })}** ! (Total: **${leaderboard[0].total} points** avec secrets)`,
+                content: `👑 **<@${leaderboard[0].user_id}>** est couronné **Mini Maître** pour **${new Date(annee, mois - 1).toLocaleDateString("fr-FR", { month: "long", year: "numeric" })}** ! (Total: **${leaderboard[0].total} points** avec secrets)`,
                 flags: MessageFlags.Ephemeral
             });
             return;
