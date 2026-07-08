@@ -192,6 +192,14 @@ const commands = [
                 ]
             },
             {
+                name: "role_grand_maitre",
+                description: "Configure le rôle Grand Maître.",
+                type: ApplicationCommandOptionType.Subcommand,
+                options: [
+                    { name: "role", description: "Le rôle Grand Maître.", type: ApplicationCommandOptionType.Role, required: true }
+                ]
+            },
+            {
                 name: "voir",
                 description: "Affiche la configuration actuelle.",
                 type: ApplicationCommandOptionType.Subcommand
@@ -370,17 +378,16 @@ const commands = [
         options: [
             {
                 name: "classement",
-                description: "Affiche le classement mensuel.",
+                description: "Affiche le classement mensuel (visible uniquement par le staff).",
                 type: ApplicationCommandOptionType.Subcommand,
                 options: [
                     { name: "mois", description: "Mois (1-12).", type: ApplicationCommandOptionType.Integer },
-                    { name: "annee", description: "Année.", type: ApplicationCommandOptionType.Integer },
-                    { name: "secrets", description: "Inclure les points secrets.", type: ApplicationCommandOptionType.Boolean }
+                    { name: "annee", description: "Année.", type: ApplicationCommandOptionType.Integer }
                 ]
             },
             {
                 name: "couronner",
-                description: "Couronne le Grand Maître du mois.",
+                description: "Couronne le Grand Maître du mois (basé sur points + secrets).",
                 type: ApplicationCommandOptionType.Subcommand,
                 options: [
                     { name: "mois", description: "Mois (1-12).", type: ApplicationCommandOptionType.Integer },
@@ -396,7 +403,7 @@ const commands = [
         description: "Affiche le profil BDL d'un membre.",
         options: [
             { name: "membre", description: "Le membre à afficher.", type: ApplicationCommandOptionType.User },
-            { name: "secrets", description: "Inclure les points secrets.", type: ApplicationCommandOptionType.Boolean }
+            { name: "secrets", description: "Inclure les points secrets (staff uniquement).", type: ApplicationCommandOptionType.Boolean }
         ]
     },
 
@@ -416,13 +423,13 @@ const commands = [
                 type: ApplicationCommandOptionType.Subcommand,
                 options: [
                     { name: "item", description: "L'article à acheter.", type: ApplicationCommandOptionType.String, required: true, choices: [
-                        { name: "Emoji personnalisé", value: "emoji_personnalise" },
-                        { name: "Commande personnalisée", value: "commande_personnalisee" },
-                        { name: "Boost d'XP", value: "xp_boost" },
-                        { name: "Nude de colo (fausse)", value: "nude_colo" },
-                        { name: "Trophée personnalisé", value: "trophee_personnalise" },
-                        { name: "Thème de Gazette", value: "theme_gazette" },
-                        { name: "Choisir le film des soirées popcorn", value: "film_soiree" }
+                        { name: "🎨 Emoji personnalisé", value: "emoji_personnalise" },
+                        { name: "💻 Commande personnalisée", value: "commande_personnalisee" },
+                        { name: "⚡ Boost d'XP", value: "xp_boost" },
+                        { name: "📸 Nude de colo (fausse)", value: "nude_colo" },
+                        { name: "🏆 Trophée personnalisé", value: "trophee_personnalise" },
+                        { name: "📰 Thème de Gazette", value: "theme_gazette" },
+                        { name: "🎬 Film des soirées popcorn", value: "film_soiree" }
                     ]},
                     { name: "note", description: "Note pour le staff.", type: ApplicationCommandOptionType.String }
                 ]
@@ -548,6 +555,7 @@ const rest = new REST({ version: '10' }).setToken(DISCORD_TOKEN);
 
         console.log('✅ Commandes déployées avec succès !');
         console.log('⏳ Attendez 1-5 minutes pour que Discord synchronise les modifications.');
+        console.log('⚠️  N\'oubliez pas de configurer le rôle Grand Maître avec: /config role_grand_maitre role:@RôleGrandMaitre');
     } catch (error) {
         console.error('❌ Erreur lors du déploiement des commandes :', error);
     }
